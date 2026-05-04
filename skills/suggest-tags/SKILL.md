@@ -1,3 +1,8 @@
+---
+name: suggest-tags
+description: Suggest appropriate tags for knowledge base articles based on their title and content.
+---
+
 # Suggest Tags - Knowledge Base Tagging Skill
 
 This skill helps the LLM analyze an article and suggest appropriate tags based on established knowledge organization best practices.
@@ -25,15 +30,17 @@ Good tag systems use multiple orthogonal dimensions:
 | `type` | Article type | `tutorial`, `reference`, `cheatsheet`, `theory` |
 | `status` | Publication state | `draft`, `review`, `published`, `deprecated` |
 | `domain` | Knowledge domain | `webdev`, `devops`, `data-science`, `security` |
-| `source` | Where it came from | `documentation`, `community`, `course`, `conference` |
+| `source` | Where it came from | `documentation`, `community`, `course`, `conference`, `repo` |
+| `project` | Project name | `knowledge-base`, other project identifiers |
 
 ### Tagging Principles
 
 1. **Use 3-7 tags per article**: Enough to describe without overcrowding
 2. **Prefer specific over general**: `fastapi` over `python`, `oauth` over `auth`
-3. **Include category tag**: Always add `type:*` (tutorial, reference, guide)
+3. **Include a category tag when it fits**: Usually add `type:*` (tutorial, reference, guide)
 4. **Add level when applicable**: `level:beginner` for learning content
 5. **Use consistent values**: Build a vocabulary of allowed values per key
+6. **Include a project tag for the target knowledge base**: Add `project:<project-name>` to categorize articles by project
 
 ### Avoid
 
@@ -42,6 +49,7 @@ Good tag systems use multiple orthogonal dimensions:
 - **Redundant tags**: `language:python` and `framework:fastapi` both imply Python
 - **Inconsistent naming**: `web-dev` vs `webdev` vs `web_development`
 - **Single-use tags**: Tags that apply to only one article aren't useful
+- **Missing project tag**: If the article belongs to a named project, include `project:<project-name>` to group articles
 
 ## How to use
 
@@ -62,7 +70,7 @@ Content: "A guide to common Python errors and how to handle them..."
    - What is the difficulty level?
    - What concept/topic is covered?
    - What type of article is it?
-   - Who is the audience?
+   - What project does this belong to?
 3. Map to existing tag vocabulary (check `kb-tags`)
 4. Suggest new tags if needed
 
@@ -80,6 +88,7 @@ Suggested tags:
 - level:beginner  (accessible to new developers)  
 - concept:errors  (main topic: error handling)
 - type:tutorial  (learning-oriented article)
+- project:knowledge-base  (project identifier)
 
 Alternative: concept:debugging (if more practical focus)
 ```
@@ -95,3 +104,7 @@ Maintain a consistent vocabulary. Common values:
 - `framework`: (open - choose specific)
 - `status`: draft, review, published, deprecated
 - `domain`: webdev, devops, data-science, security, mobile, desktop, backend
+- `source`: documentation, community, course, conference, repo
+- `project`: knowledge-base
+
+**Note:** For Knowledge Base articles, include the appropriate `project:<project-name>` tag so the project can be filtered and grouped consistently.

@@ -2,22 +2,34 @@
   "name": "knowledge-base",
   "version": "1.0.0",
   "description": "A file-based knowledge base for LLMs where articles are linked via shared value tags",
-  "main": "dist/index.js",
   "type": "module",
   "scripts": {
     "build": "tsc",
     "prepublish": "npm run build"
   },
-  "keywords": ["knowledge-base", "notes", "tags"],
+  "keywords": ["knowledge-base", "notes", "tags", "pi-package"],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "gray-matter": "^4.0.3",
     "simple-git": "^3.22.0"
   },
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "typebox": "*"
+  },
   "devDependencies": {
     "@mariozechner/pi-coding-agent": "*",
     "@types/node": "^20.10.0",
+    "typebox": "*",
     "typescript": "^5.3.0"
+  },
+  "pi": {
+    "extensions": [
+      "./knowledge-base.ts"
+    ],
+    "skills": [
+      "./skills"
+    ]
   }
 }

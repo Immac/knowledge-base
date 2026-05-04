@@ -5,6 +5,7 @@ tags:
   level: beginner
   concept: errors
   status: published
+  project: knowledge-base
 created: 2026-05-03T11:00:00.000Z
 modified: 2026-05-03T11:00:00.000Z
 ---
