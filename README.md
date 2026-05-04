@@ -1,96 +1,147 @@
 # Knowledge Base
 
-A file-based knowledge base for LLMs where articles are linked via shared "value tags" rather than folder hierarchy.
+A file-based knowledge base for LLMs where articles are linked via shared value tags instead of folders.
 
-## Installation
+![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue?style=flat-square&logo=typescript)
+![MIT License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
+![Pi Extension](https://img.shields.io/badge/pi--extension-orange?style=flat-square)
 
-Copy this extension to your pi extensions folder or install via pi:
+## Features
+
+- 🔍 Store and discover articles by structured value tags
+- 🛠️ Create, read, edit, list, and search markdown articles
+- 📚 Build a tag index with related tag relationships
+- 🧱 Keep extension code separate from article data
+- 🔁 Auto-initialize the knowledge base folder and git repo on first use
+- 🏷️ Suggest consistent tags with the bundled `suggest-tags` skill
+
+## Tools
+
+| Tool | Description |
+|---|---|
+| `kb-list` | List all articles in the knowledge base |
+| `kb-create` | Create a new article from title, tags, and optional markdown content |
+| `kb-read` | Read an article by slug |
+| `kb-edit` | Update title, tags, or content for an existing article |
+| `kb-tags` | Show the tag index and related tags |
+| `kb-search` | Search by tags, content, or both |
+
+## Quick Start
+
+### Install
+
 ```bash
 pi install ./knowledge-base
 ```
 
-## Package.json
+### First use
 
-This extension includes:
-- **Entry point**: `knowledge-base.ts` re-exports the built extension
-- **Extensions**: `kb-list`, `kb-create`, `kb-read`, `kb-edit`, `kb-tags`, `kb-search` tools
-- **Skills**: `suggest-tags` skill for tagging guidance
+The extension stores article data outside the extension repo:
 
-## Project Structure
+- Global: `~/.pi/knowledge-base/`
+- Local: `./knowledge-base/` if that folder exists in the current workspace
 
-- `knowledge-base.ts`: Extension entry point used by the pi installer
-- `skills/`: Markdown skills with frontmatter metadata
-- `articles/`: Sample/reference knowledge base articles
+On first use, the data folder is created and initialized as a git repository.
 
-## Usage
+### Create an article
 
-The extension provides these tools:
-
-### kb-list
-List all articles in the knowledge base.
-
-### kb-create
-Create a new article.
-```
-kb-create --title "Article Title" --tags "language:python,level:beginner" --content "Markdown content..."
+```text
+kb-create --title "Python Errors" --tags "language:python,level:beginner,concept:errors,project:knowledge-base" --content "Common Python errors and how to handle them."
 ```
 
-### kb-read
-Read an article by slug.
+## Usage Examples
+
+### List articles
+
+```text
+kb-list
 ```
+
+### Read an article
+
+```text
 kb-read --slug python-errors
 ```
 
-### kb-edit
-Edit an existing article.
-```
-kb-edit --slug python-errors --title "New Title" --tags "language:python,level:intermediate"
+### Update an article
+
+```text
+kb-edit --slug python-errors --title "Python Error Handling" --tags "language:python,level:intermediate,concept:errors,project:knowledge-base"
 ```
 
-### kb-tags
-Show tag index and relationships.
-```
+### Show tag relationships
+
+```text
 kb-tags
 kb-tags --key language
 ```
 
-### kb-search
-Search articles by tags or content.
-```
+### Search by tags or content
+
+```text
 kb-search --tags "language:python,level:beginner"
 kb-search --content "error handling"
 ```
 
-## Data Location
+## Data Model
 
-- **Global**: `~/.pi/knowledge-base/`
-- **Local**: `./knowledge-base/` (relative to cwd)
+Articles are stored as markdown files with YAML frontmatter:
 
-## Value Tags
-
-Tags are structured key-value pairs:
 ```yaml
+---
+title: Python Errors
 tags:
   language: python
   level: beginner
-  framework: fastapi
-  status: draft
+  concept: errors
+  project: knowledge-base
+created: 2026-05-03T11:00:00.000Z
+modified: 2026-05-03T11:00:00.000Z
+---
 ```
 
-This enables:
-- **Emergent links**: Articles share connections via shared tag values
-- **Filtering**: `level:intermediate` finds all intermediate articles
-- **Organic structure**: Knowledge shape emerges from tags, not folders
+Tags are stored as key/value pairs, which makes filtering and cross-linking easy.
 
-## Skills
+## Development
 
-This extension includes a `suggest-tags` skill that helps tag articles properly.
+### Prerequisites
 
-### suggest-tags
+- Node.js 18+
+- npm
+- A pi coding-agent runtime with the extension loader
 
-The skill provides guidance on:
-- Tag categories (language, level, concept, type, status, domain, source, project)
-- Tagging principles
-- Consistent vocabulary
+### Setup
 
-Use `/skill:suggest-tags` to load the skill when tagging articles.
+```bash
+npm install
+```
+
+### Build
+
+```bash
+npm run build
+```
+
+### Type-check
+
+```bash
+npx tsc --noEmit
+```
+
+### Key files
+
+| File | Purpose |
+|---|---|
+| `knowledge-base.ts` | Extension entry point used by the pi installer |
+| `src/index.ts` | Registers the tools |
+| `src/storage.ts` | Reads and writes article files |
+| `src/parser.ts` | Parses and serializes frontmatter |
+| `src/git.ts` | Initializes and commits the data repo |
+| `skills/suggest-tags/SKILL.md` | Tagging guidance for articles |
+
+## Resources
+
+- [`skills/suggest-tags/SKILL.md`](./skills/suggest-tags/SKILL.md) — tag suggestion guidance
+- [`PLAN.md`](./PLAN.md) — implementation notes and project plan
+- [`articles/`](./articles) — sample/reference articles
+- [pi-extension-builder](https://github.com/Immac/pi-extension-builder) — documentation style reference
