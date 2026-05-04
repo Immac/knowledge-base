@@ -7,6 +7,8 @@ description: Suggest appropriate tags for knowledge base articles based on their
 
 This skill helps the LLM analyze an article and suggest appropriate tags based on established knowledge organization best practices.
 
+The listed tag keys are suggestions, not a hard schema: if the article needs a new key, use it.
+
 ## When to use
 
 Use this skill when:
@@ -33,6 +35,7 @@ Good tag systems use multiple orthogonal dimensions:
 | `domain` | Knowledge domain | `webdev`, `devops`, `data-science`, `security` |
 | `source` | Where it came from | `documentation`, `community`, `course`, `conference`, `repo` |
 | `project` | Project name | `knowledge-base`, other project identifiers |
+| `any other key` | Use whatever key the article needs | `audience`, `audience-level`, `format`, `scope`, `owner` |
 
 ### Tagging Principles
 
@@ -44,6 +47,7 @@ Good tag systems use multiple orthogonal dimensions:
 6. **Use as many tags as needed** to capture the artifact cleanly; do not force a short limit if more orthogonal tags improve retrieval
 7. **Repeat keys freely when they describe different things**: `concept:tools` and `concept:wiki` can both be valid on the same article
 8. **Do not repeat the exact same tag twice**: `concept:tools` should appear once, not duplicated
+9. **Keys themselves are suggestions**: if the article needs `audience`, `format`, `scope`, or some other key, use it
 
 ### Avoid
 

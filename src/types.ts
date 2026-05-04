@@ -7,7 +7,8 @@ export interface ValueTag {
 
 export interface ArticleFrontmatter {
   readonly title: string;
-  readonly tags: readonly ValueTag[];
+  readonly tags: readonly string[];
+  readonly attachments?: readonly string[];
   readonly created: string; // ISO 8601
   readonly modified: string; // ISO 8601
 }
@@ -17,6 +18,7 @@ export interface Article {
   readonly title: string;
   readonly content: string;
   readonly tags: readonly ValueTag[];
+  readonly attachments: readonly string[];
   readonly created: Date;
   readonly modified: Date;
   readonly filePath: string;
@@ -42,6 +44,7 @@ export type CreateOptions = {
   readonly title: string;
   readonly tags?: readonly ValueTag[];
   readonly content?: string;
+  readonly attachments?: readonly string[];
 };
 
 export type EditOptions = {
@@ -49,6 +52,7 @@ export type EditOptions = {
   readonly title?: string;
   readonly tags?: readonly ValueTag[];
   readonly content?: string;
+  readonly attachments?: readonly string[];
 };
 
 export type SearchOptions = {
@@ -84,6 +88,115 @@ export type TransferResult =
       readonly sourcePath: string;
       readonly destinationPath: string;
       readonly overwritten: boolean;
+    }
+  | {
+      readonly success: false;
+      readonly error: string;
+    };
+
+export type FileKind = 'media' | 'raw';
+
+export type FileScope = 'global' | 'local';
+
+export interface ManagedFile {
+  readonly kind: FileKind;
+  readonly scope: FileScope;
+  readonly name: string;
+  readonly filePath: string;
+  readonly size: number;
+  readonly modified: Date;
+  readonly tags: readonly ValueTag[];
+  readonly attachedArticles: readonly string[];
+}
+
+export interface ManagedFileMeta {
+  readonly tags: readonly ValueTag[];
+  readonly attachedArticles: readonly string[];
+}
+
+export type FileUploadOptions = {
+  readonly sourcePath: string;
+  readonly name?: string;
+  readonly tags?: readonly ValueTag[];
+  readonly overwrite?: boolean;
+};
+
+export type FileListOptions = {
+  readonly kind: FileKind;
+};
+
+export type FileSearchOptions = {
+  readonly kind: FileKind;
+  readonly tags?: readonly ValueTag[];
+  readonly query?: string;
+};
+
+export type FileMoveOptions = {
+  readonly sourceName: string;
+  readonly destinationName?: string;
+  readonly overwrite?: boolean;
+};
+
+export type FileDeleteOptions = {
+  readonly name: string;
+};
+
+export type FileAttachmentOptions = {
+  readonly articleSlug: string;
+  readonly fileName: string;
+};
+
+export type FileUploadResult =
+  | {
+      readonly success: true;
+      readonly file: ManagedFile;
+      readonly sourcePath: string;
+      readonly destinationPath: string;
+      readonly overwritten: boolean;
+    }
+  | {
+      readonly success: false;
+      readonly error: string;
+    };
+
+export interface FileListResult {
+  readonly kind: FileKind;
+  readonly files: readonly ManagedFile[];
+  readonly count: number;
+}
+
+export type FileSearchResult = FileListResult;
+
+export type FileMoveResult =
+  | {
+      readonly success: true;
+      readonly file: ManagedFile;
+      readonly sourcePath: string;
+      readonly destinationPath: string;
+      readonly overwritten: boolean;
+    }
+  | {
+      readonly success: false;
+      readonly error: string;
+    };
+
+export type FileDeleteResult =
+  | {
+      readonly success: true;
+      readonly filePath: string;
+      readonly metaPath?: string;
+    }
+  | {
+      readonly success: false;
+      readonly error: string;
+    };
+
+export type FileAttachmentResult =
+  | {
+      readonly success: true;
+      readonly article: Article;
+      readonly file: ManagedFile;
+      readonly attachmentPath: string;
     }
   | {
       readonly success: false;

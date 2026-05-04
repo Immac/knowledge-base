@@ -1,6 +1,5 @@
 // Knowledge Base - Frontmatter Parser
 
-import { readFileSync } from 'fs';
 import matter from 'gray-matter';
 import type { Article, ArticleFrontmatter, ValueTag } from './types.js';
 
@@ -10,25 +9,68 @@ function isISODate(value: string): boolean {
   return ISO_DATE.test(value);
 }
 
-function parseValueTags(tags: Record<string, string> | undefined): readonly ValueTag[] {
+function parseTagString(tag: string): ValueTag | null {
+  const index = tag.indexOf(':');
+  if (index === -1) return null;
+  const key = tag.slice(0, index).trim();
+  const value = tag.slice(index + 1).trim();
+  if (!key) return null;
+  return { key, value };
+}
+
+function parseValueTags(tags: unknown): readonly ValueTag[] {
   if (!tags) return [];
-  return Object.entries(tags).map(([key, value]) => ({
-    key,
-    value,
-  }));
+
+  if (Array.isArray(tags)) {
+    const parsed: ValueTag[] = [];
+    for (const tag of tags) {
+      if (typeof tag === 'string') {
+        const parsedTag = parseTagString(tag);
+        if (parsedTag) parsed.push(parsedTag);
+      } else if (tag && typeof tag === 'object') {
+        const entries = Object.entries(tag as Record<string, unknown>);
+        for (const [key, value] of entries) {
+          if (typeof value === 'string') {
+            parsed.push({ key, value });
+          }
+        }
+      }
+    }
+    return parsed;
+  }
+
+  if (typeof tags === 'object') {
+    return Object.entries(tags as Record<string, unknown>).flatMap(([key, value]) => {
+      if (typeof value === 'string') {
+        return [{ key, value }];
+      }
+      if (Array.isArray(value)) {
+        return value
+          .filter((item): item is string => typeof item === 'string')
+          .map((item) => ({ key, value: item }));
+      }
+      return [];
+    });
+  }
+
+  return [];
+}
+
+function parseStringArray(value: unknown): readonly string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string');
 }
 
 export function parseFrontmatter(rawContent: string, filePath: string): Article {
   const parsed = matter(rawContent);
-  const data = parsed.data as {
-    title?: string;
-    tags?: Record<string, string>;
-    created?: string;
-    modified?: string;
+  const data = parsed.data as ArticleFrontmatter & {
+    tags?: unknown;
+    attachments?: unknown;
   };
 
   const title = data.title ?? '';
   const tags = parseValueTags(data.tags);
+  const attachments = parseStringArray(data.attachments);
 
   // Parse dates
   let created: Date;
@@ -55,6 +97,7 @@ export function parseFrontmatter(rawContent: string, filePath: string): Article 
     title,
     content: parsed.content,
     tags,
+    attachments,
     created,
     modified,
     filePath,
@@ -66,37 +109,27 @@ export function serializeArticle(
   tags: readonly ValueTag[],
   content: string,
   created: Date,
-  modified: Date
+  modified: Date,
+  attachments: readonly string[] = []
 ): string {
-  // Convert tags to object format
-  const tagsObj: Record<string, string> = {};
-  for (const tag of tags) {
-    tagsObj[tag.key] = tag.value;
-  }
-
-  const frontmatter = {
+  const frontmatter: ArticleFrontmatter = {
     title,
-    tags: tagsObj,
+    tags: tags.map((tag) => `${tag.key}:${tag.value}`),
     created: created.toISOString(),
     modified: modified.toISOString(),
+    attachments,
   };
 
-  // Use gray-matter to serialize
-  const result = matter.stringify(content, frontmatter);
-  return result;
+  return matter.stringify(content, frontmatter);
 }
 
 export function generateSlug(title: string): string {
   return (
     title
       .toLowerCase()
-      // Replace spaces and underscores with hyphens
       .replace(/[\s_]+/g, '-')
-      // Remove characters that aren't letters, numbers, or hyphens
       .replace(/[^a-z0-9-]/g, '')
-      // Remove leading/trailing hyphens
       .replace(/^-+|-+$/g, '')
-      // Replace multiple hyphens with single hyphen
       .replace(/-+/g, '-')
   );
 }

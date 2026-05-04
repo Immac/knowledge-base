@@ -20,6 +20,21 @@ Welcome to the knowledge base. This is the index article.
 - **kb-search**: Find articles by tags
 - **kb-promote**: Promote a local article to global
 - **kb-copy-local**: Copy a global article into the local workspace
+- **kb-upload-media**: Upload media files with tags
+- **kb-list-media**: List media files and tags
+- **kb-search-media**: Search media files by tags or name
+- **kb-move-media**: Rename media files while preserving links
+- **kb-delete-media**: Delete media files and detach links
+- **kb-attach-media**: Attach media files to articles
+- **kb-detach-media**: Detach media files from articles
+- **kb-upload-raw**: Upload raw files with tags
+- **kb-list-raw**: List raw files and tags
+- **kb-search-raw**: Search raw files by tags or name
+- **kb-move-raw**: Rename raw files while preserving links
+- **kb-delete-raw**: Delete raw files and detach links
+- **kb-attach-raw**: Attach raw files to articles
+- **kb-detach-raw**: Detach raw files from articles
+- **kb-list-attachments**: Show all attachments for an article
 
 ## Tag Categories
 
@@ -39,9 +54,11 @@ All articles should include a `project:<project-name>` tag to categorize by proj
 
 ## Tagging Rules
 
-- Repeat keys when they describe different aspects of the same article
+- Repeat keys when they describe different aspects of the same article or asset
 - Do not repeat the exact same key/value pair twice
 - Allow the corpus to accumulate enough tags for order to emerge later
+- Managed media and raw files can store tags in sidecar metadata files
+- Articles can link to managed files using attachment paths like `media/banner.png` or `raw/dataset.bin`
 
 ## Scope Notes
 
