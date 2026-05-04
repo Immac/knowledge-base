@@ -3,7 +3,7 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync, statSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { parseFrontmatter, serializeArticle, generateSlug } from './parser.js';
-import { resolveDataPath, ensureDataPath } from './config.js';
+import { resolveDataPath, ensureDataPath, getKnowledgeBasePaths } from './config.js';
 import type { Article, CreateOptions, EditOptions, KnowledgeBaseConfig } from './types.js';
 
 export function getKnowledgeBaseConfig(preferLocal: boolean = false): KnowledgeBaseConfig {
@@ -11,6 +11,22 @@ export function getKnowledgeBaseConfig(preferLocal: boolean = false): KnowledgeB
   return {
     dataPath,
     isLocal: preferLocal,
+  };
+}
+
+export function getGlobalKnowledgeBaseConfig(): KnowledgeBaseConfig {
+  const { globalDataPath } = getKnowledgeBasePaths();
+  return {
+    dataPath: globalDataPath,
+    isLocal: false,
+  };
+}
+
+export function getLocalKnowledgeBaseConfig(): KnowledgeBaseConfig {
+  const { localDataPath } = getKnowledgeBasePaths();
+  return {
+    dataPath: localDataPath,
+    isLocal: true,
   };
 }
 

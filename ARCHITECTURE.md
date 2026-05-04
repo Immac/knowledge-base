@@ -2,47 +2,50 @@
 
 ## Purpose
 
-`knowledge-base` is a pi tool extension for managing a file-based knowledge base. It stores articles as markdown files with YAML frontmatter and uses structured value tags to create links between articles without relying on folder hierarchy.
+`knowledge-base` is a pi tool extension for managing a file-based knowledge base of markdown articles. It keeps article data separate from extension code, stores metadata in YAML frontmatter, and uses structured value tags to make discovery and filtering LLM-friendly.
 
 ## Goals
 
-- Keep article data separate from the extension code
-- Make article storage simple, inspectable, and git-friendly
-- Provide a small tool surface that is easy for LLMs to reason about
-- Support tag-based discovery, filtering, and search
+- Keep article data outside the extension repository
+- Make articles easy to inspect, diff, and move
+- Provide a small, explicit tool surface
+- Support both global and workspace-local knowledge bases
+- Keep promotion/copy workflows one-way and unambiguous for LLMs
 
 ## System Components
 
 | Component | File(s) | Responsibility |
 |---|---|---|
-| Extension entry point | `knowledge-base.ts`, `src/index.ts` | Registers all tools with pi |
+| Extension entrypoint | `knowledge-base.ts`, `src/index.ts` | Registers pi tools |
 | Configuration | `src/config.ts` | Resolves global/local data paths |
-| Storage layer | `src/storage.ts` | Reads, writes, lists, edits, and deletes article files |
+| Storage layer | `src/storage.ts` | Reads, writes, lists, and edits article files |
 | Parser/serializer | `src/parser.ts` | Converts between markdown/frontmatter and typed articles |
-| Git integration | `src/git.ts` | Initializes the data repo and commits article changes |
-| Command layer | `src/commands/*.ts` | Formats tool results and handles command-specific logic |
-| Tagging skill | `skills/suggest-tags/SKILL.md` | Helps choose consistent article tags |
+| Git integration | `src/git.ts` | Initializes and commits the data repo |
+| Command layer | `src/commands/*.ts` | Formats tool output and handles action-specific logic |
 
 ## Data Layout
 
-The extension code is installed separately from the knowledge base data:
+The extension code is installed separately from user data:
 
 - Extension code: `~/.pi-extensions/knowledge-base/`
 - Global article data: `~/.pi/knowledge-base/`
 - Local article data: `./knowledge-base/` when present in the current workspace
 
-The article folder is initialized as a git repository on first use.
+Each knowledge base folder is initialized as a git repository on first use.
 
 ## Core Principles
 
 ### 1. Keep data flat
-Articles are stored as individual `.md` files, one per slug. That keeps the knowledge base easy to inspect, diff, and move.
+
+Articles are stored as individual `.md` files, one per slug. This keeps the knowledge base easy to inspect and move between scopes.
 
 ### 2. Use value tags
-Tags are stored as key/value pairs instead of free-form labels. This makes it easier to filter by dimensions such as language, level, status, or project.
 
-### 3. Keep tools small
-Each tool maps to a single user action:
+Tags are stored as key/value pairs instead of free-form labels. This makes filtering and relationship building predictable for LLMs.
+
+### 3. Keep tools narrow
+
+Each tool maps to a single user intent:
 
 - `kb-list`
 - `kb-create`
@@ -50,16 +53,21 @@ Each tool maps to a single user action:
 - `kb-edit`
 - `kb-tags`
 - `kb-search`
+- `kb-promote`
+- `kb-copy-local`
 
 ### 4. Be resilient
-If git initialization or commit creation fails, article operations still complete. Git is used for history, not as a hard dependency for basic reads and writes.
+
+Git initialization and commits are best-effort. Core file operations still succeed if git operations fail.
 
 ### 5. Prefer readable output
-Tool responses are formatted as plain text so they are easy for both humans and LLMs to inspect.
 
-## Interaction Flow
+Tool responses are plain text, making them easy for both humans and LLMs to inspect.
+
+## Interaction Flows
 
 ### Create article
+
 1. User calls `kb-create`
 2. `src/index.ts` ensures the data folder exists
 3. `src/storage.ts` generates a slug and writes the markdown file
@@ -67,16 +75,26 @@ Tool responses are formatted as plain text so they are easy for both humans and 
 5. A formatted confirmation is returned
 
 ### Read/list/search
+
 1. User calls `kb-read`, `kb-list`, `kb-tags`, or `kb-search`
 2. The command layer queries article files through `src/storage.ts`
 3. Results are formatted into plain text
 4. The tool returns the rendered result to pi
 
 ### Edit article
+
 1. User calls `kb-edit`
 2. The existing article is loaded from disk
 3. Fields are updated and the modified timestamp is refreshed
 4. The file is rewritten and the change is optionally committed
+
+### Promote or copy between scopes
+
+1. User calls `kb-promote` or `kb-copy-local`
+2. The source scope is resolved explicitly in `src/index.ts`
+3. The article is read from the source folder
+4. The destination file is written, optionally replacing an existing article
+5. `kb-promote` removes the source file after successful transfer; `kb-copy-local` leaves the source intact
 
 ## Command Pipeline
 
@@ -90,8 +108,9 @@ pi tool call
 
 ## Why This Structure Works
 
-- The extension entry point is tiny and easy to audit
+- The extension entrypoint is tiny and easy to audit
 - Storage logic is isolated from formatting logic
 - File-based data makes syncing and backups straightforward
 - The git repo gives article history without adding database complexity
-- The tag skill keeps metadata consistent across articles
+- Separate one-way transfer tools reduce ambiguity for LLM callers
+- The tag model keeps metadata consistent across articles

@@ -67,3 +67,25 @@ export type TagsOptions = {
 export type ReadOptions = {
   readonly slug: string;
 };
+
+export type TransferAction = 'promote' | 'copy';
+
+export type TransferOptions = {
+  readonly slug: string;
+  readonly action: TransferAction;
+  readonly overwrite?: boolean;
+};
+
+export type TransferResult =
+  | {
+      readonly success: true;
+      readonly action: TransferAction;
+      readonly article: Article;
+      readonly sourcePath: string;
+      readonly destinationPath: string;
+      readonly overwritten: boolean;
+    }
+  | {
+      readonly success: false;
+      readonly error: string;
+    };

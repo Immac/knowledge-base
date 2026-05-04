@@ -12,9 +12,10 @@ import { tagsCommand, formatTagIndex, type TagsOptions } from "./commands/tags.j
 import { searchCommand, formatSearchResult, type SearchOptions } from "./commands/search.js";
 
 // Storage & Config
-import { getKnowledgeBaseConfig, ensureDataFolder } from "./storage.js";
+import { getKnowledgeBaseConfig, getGlobalKnowledgeBaseConfig, getLocalKnowledgeBaseConfig, ensureDataFolder } from "./storage.js";
 import { initRepo, commitChanges } from "./git.js";
-import type { KnowledgeBaseConfig } from "./types.js";
+import { transferCommand, formatTransferResult, type TransferOptions } from "./commands/transfer.js";
+import type { KnowledgeBaseConfig, TransferAction } from "./types.js";
 
 // Initialize data folder on first use
 function initKnowledgeBase(): KnowledgeBaseConfig {
@@ -22,6 +23,38 @@ function initKnowledgeBase(): KnowledgeBaseConfig {
   ensureDataFolder(config);
   initRepo(config);
   return config;
+}
+
+async function executeTransferAction(action: TransferAction, slug: string, overwrite?: boolean) {
+  const sourceConfig = action === "promote" ? getLocalKnowledgeBaseConfig() : getGlobalKnowledgeBaseConfig();
+  const destinationConfig = action === "promote" ? getGlobalKnowledgeBaseConfig() : getLocalKnowledgeBaseConfig();
+  const options: TransferOptions = {
+    slug,
+    action,
+    overwrite,
+  };
+
+  const result = transferCommand(options, sourceConfig, destinationConfig);
+
+  if (result.success) {
+    try {
+      await commitChanges(destinationConfig, action === "promote"
+        ? `Promote article: ${slug}`
+        : `Copy article to local: ${slug}`);
+    } catch {
+      // Git commit may fail, that's okay
+    }
+
+    if (action === "promote") {
+      try {
+        await commitChanges(sourceConfig, `Remove promoted article: ${slug}`);
+      } catch {
+        // Git commit may fail, that's okay
+      }
+    }
+  }
+
+  return result;
 }
 
 export default function (pi: ExtensionAPI) {
@@ -210,6 +243,62 @@ export default function (pi: ExtensionAPI) {
       const result = searchCommand(options, config);
       return {
         content: [{ type: "text", text: formatSearchResult(result) }],
+        details: {},
+      };
+    },
+  });
+
+  // kb-promote tool
+  pi.registerTool({
+    name: "kb-promote",
+    label: "Promote Article",
+    description: "Promote a local article to the global knowledge base",
+    parameters: Type.Object({
+      slug: Type.String({ description: "Local article slug to promote" }),
+      overwrite: Type.Optional(Type.Boolean({ description: "Replace the global article if it already exists" })),
+    }),
+    async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
+      const slug = params.slug as string;
+      const overwrite = params.overwrite as boolean | undefined;
+
+      if (!slug) {
+        return {
+          content: [{ type: "text", text: "Error: slug is required" }],
+          details: {},
+        };
+      }
+
+      const result = await executeTransferAction("promote", slug, overwrite);
+      return {
+        content: [{ type: "text", text: formatTransferResult(result) }],
+        details: {},
+      };
+    },
+  });
+
+  // kb-copy-local tool
+  pi.registerTool({
+    name: "kb-copy-local",
+    label: "Copy Article Locally",
+    description: "Copy a global article into the local knowledge base",
+    parameters: Type.Object({
+      slug: Type.String({ description: "Global article slug to copy" }),
+      overwrite: Type.Optional(Type.Boolean({ description: "Replace the local article if it already exists" })),
+    }),
+    async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
+      const slug = params.slug as string;
+      const overwrite = params.overwrite as boolean | undefined;
+
+      if (!slug) {
+        return {
+          content: [{ type: "text", text: "Error: slug is required" }],
+          details: {},
+        };
+      }
+
+      const result = await executeTransferAction("copy", slug, overwrite);
+      return {
+        content: [{ type: "text", text: formatTransferResult(result) }],
         details: {},
       };
     },

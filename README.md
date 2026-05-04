@@ -1,6 +1,6 @@
 # Knowledge Base
 
-A file-based knowledge base for LLMs where articles are linked via shared value tags instead of folders.
+A file-based knowledge base extension for managing markdown articles with structured value tags, plus one-way promotion and local-copy tools for moving content between global and workspace scopes.
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue?style=flat-square&logo=typescript)
 ![MIT License](https://img.shields.io/badge/license-MIT-green?style=flat-square)
@@ -8,23 +8,25 @@ A file-based knowledge base for LLMs where articles are linked via shared value 
 
 ## Features
 
-- 🔍 Store and discover articles by structured value tags
-- 🛠️ Create, read, edit, list, and search markdown articles
-- 📚 Build a tag index with related tag relationships
+- 🔍 Store, read, search, and edit markdown articles
+- 🛠️ Use value tags for structured discovery and filtering
+- 📚 Build a tag index with related-tag relationships
+- ↔️ Promote local articles to global or copy global articles into a local workspace
+- 🔁 Auto-initialize the article folder and git repo on first use
 - 🧱 Keep extension code separate from article data
-- 🔁 Auto-initialize the knowledge base folder and git repo on first use
-- 🏷️ Suggest consistent tags with the bundled `suggest-tags` skill
 
 ## Tools
 
 | Tool | Description |
 |---|---|
-| `kb-list` | List all articles in the knowledge base |
-| `kb-create` | Create a new article from title, tags, and optional markdown content |
+| `kb-list` | List all articles in the current knowledge base |
+| `kb-create` | Create a new article from title, tags, and optional content |
 | `kb-read` | Read an article by slug |
-| `kb-edit` | Update title, tags, or content for an existing article |
+| `kb-edit` | Update an existing article |
 | `kb-tags` | Show the tag index and related tags |
 | `kb-search` | Search by tags, content, or both |
+| `kb-promote` | Promote a local article to the global knowledge base |
+| `kb-copy-local` | Copy a global article into the local knowledge base |
 
 ## Quick Start
 
@@ -41,7 +43,7 @@ The extension stores article data outside the extension repo:
 - Global: `~/.pi/knowledge-base/`
 - Local: `./knowledge-base/` if that folder exists in the current workspace
 
-On first use, the data folder is created and initialized as a git repository.
+On first use, the folder is created and initialized as a git repository.
 
 ### Create an article
 
@@ -69,18 +71,23 @@ kb-read --slug python-errors
 kb-edit --slug python-errors --title "Python Error Handling" --tags "language:python,level:intermediate,concept:errors,project:knowledge-base"
 ```
 
-### Show tag relationships
-
-```text
-kb-tags
-kb-tags --key language
-```
-
 ### Search by tags or content
 
 ```text
 kb-search --tags "language:python,level:beginner"
 kb-search --content "error handling"
+```
+
+### Promote a local article to global
+
+```text
+kb-promote --slug python-errors
+```
+
+### Copy a global article into the local workspace
+
+```text
+kb-copy-local --slug shared-reference
 ```
 
 ## Data Model
@@ -128,20 +135,26 @@ npm run build
 npx tsc --noEmit
 ```
 
+### Test
+
+```bash
+npm test
+```
+
 ### Key files
 
 | File | Purpose |
 |---|---|
-| `knowledge-base.ts` | Extension entry point used by the pi installer |
+| `knowledge-base.ts` | Extension entrypoint used by the pi installer |
 | `src/index.ts` | Registers the tools |
-| `src/storage.ts` | Reads and writes article files |
+| `src/storage.ts` | Resolves paths and reads/writes article files |
 | `src/parser.ts` | Parses and serializes frontmatter |
 | `src/git.ts` | Initializes and commits the data repo |
-| `skills/suggest-tags/SKILL.md` | Tagging guidance for articles |
+| `src/commands/*.ts` | Command-specific logic and formatting |
 
 ## Resources
 
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — extension structure and interaction flows
 - [`skills/suggest-tags/SKILL.md`](./skills/suggest-tags/SKILL.md) — tag suggestion guidance
 - [`PLAN.md`](./PLAN.md) — implementation notes and project plan
-- [`articles/`](./articles) — sample/reference articles
 - [pi-extension-builder](https://github.com/Immac/pi-extension-builder) — documentation style reference

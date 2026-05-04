@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc",
+    "test": "npm run build && node --test test/*.test.mjs",
     "prepublish": "npm run build"
   },
   "keywords": ["knowledge-base", "notes", "tags", "pi-package"],
