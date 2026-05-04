@@ -12,6 +12,7 @@ A file-based knowledge base extension for managing markdown articles with struct
 - 🛠️ Use value tags for structured discovery and filtering
 - 📚 Build a tag index with related-tag relationships
 - ↔️ Promote local articles to global or copy global articles into a local workspace
+- ✍️ Create articles globally or in a local workspace with explicit tools
 - 🔁 Auto-initialize the article folder and git repo on first use
 - 🧱 Keep extension code separate from article data
 
@@ -20,7 +21,8 @@ A file-based knowledge base extension for managing markdown articles with struct
 | Tool | Description |
 |---|---|
 | `kb-list` | List all articles in the current knowledge base |
-| `kb-create` | Create a new article from title, tags, and optional content |
+| `kb-create` | Create a new article in the global knowledge base |
+| `kb-create-local` | Create a new article in the local knowledge base |
 | `kb-read` | Read an article by slug |
 | `kb-edit` | Update an existing article |
 | `kb-tags` | Show the tag index and related tags |
@@ -45,10 +47,16 @@ The extension stores article data outside the extension repo:
 
 On first use, the folder is created and initialized as a git repository.
 
-### Create an article
+### Create an article globally
 
 ```text
 kb-create --title "Python Errors" --tags "language:python,level:beginner,concept:errors,project:knowledge-base" --content "Common Python errors and how to handle them."
+```
+
+### Create an article locally
+
+```text
+kb-create-local --title "Draft Note" --tags "status:draft,project:knowledge-base" --content "Working notes for the current workspace."
 ```
 
 ## Usage Examples

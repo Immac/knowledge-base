@@ -49,6 +49,7 @@ Each tool maps to a single user intent:
 
 - `kb-list`
 - `kb-create`
+- `kb-create-local`
 - `kb-read`
 - `kb-edit`
 - `kb-tags`
@@ -68,8 +69,8 @@ Tool responses are plain text, making them easy for both humans and LLMs to insp
 
 ### Create article
 
-1. User calls `kb-create`
-2. `src/index.ts` ensures the data folder exists
+1. User calls `kb-create` for a global article or `kb-create-local` for a workspace article
+2. `src/index.ts` resolves the correct knowledge base scope
 3. `src/storage.ts` generates a slug and writes the markdown file
 4. `src/git.ts` attempts to commit the change
 5. A formatted confirmation is returned

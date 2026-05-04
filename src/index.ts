@@ -18,11 +18,29 @@ import { transferCommand, formatTransferResult, type TransferOptions } from "./c
 import type { KnowledgeBaseConfig, TransferAction } from "./types.js";
 
 // Initialize data folder on first use
-function initKnowledgeBase(): KnowledgeBaseConfig {
-  const config = getKnowledgeBaseConfig();
+function initKnowledgeBase(config: KnowledgeBaseConfig = getKnowledgeBaseConfig()): KnowledgeBaseConfig {
   ensureDataFolder(config);
   initRepo(config);
   return config;
+}
+
+async function executeCreateAction(config: KnowledgeBaseConfig, title: string, tagsStr?: string, content?: string) {
+  const initializedConfig = initKnowledgeBase(config);
+  const options: CreateOptions = {
+    title,
+    tags: tagsStr ? parseTagsString(tagsStr) : undefined,
+    content,
+  };
+
+  const result = createCommand(options, initializedConfig);
+
+  try {
+    await commitChanges(initializedConfig, `Create article: ${title}`);
+  } catch {
+    // Git commit may fail, that's okay
+  }
+
+  return result;
 }
 
 async function executeTransferAction(action: TransferAction, slug: string, overwrite?: boolean) {
@@ -86,8 +104,6 @@ export default function (pi: ExtensionAPI) {
       content: Type.Optional(Type.String({ description: "Article content in markdown" })),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
-      const config = initKnowledgeBase();
-
       const title = params.title as string;
       if (!title) {
         return {
@@ -98,21 +114,37 @@ export default function (pi: ExtensionAPI) {
 
       const tagsStr = params.tags as string | undefined;
       const content = params.content as string | undefined;
+      const result = await executeCreateAction(getKnowledgeBaseConfig(), title, tagsStr, content);
 
-      const options: CreateOptions = {
-        title,
-        tags: tagsStr ? parseTagsString(tagsStr) : undefined,
-        content,
+      return {
+        content: [{ type: "text", text: formatCreateResult(result) }],
+        details: {},
       };
+    },
+  });
 
-      const result = createCommand(options, config);
-      
-      // Try to commit changes
-      try {
-        await commitChanges(config, `Create article: ${title}`);
-      } catch {
-        // Git commit may fail, that's okay
+  // kb-create-local tool
+  pi.registerTool({
+    name: "kb-create-local",
+    label: "Create Article Locally",
+    description: "Create a new article in the local knowledge base",
+    parameters: Type.Object({
+      title: Type.String({ description: "Article title" }),
+      tags: Type.Optional(Type.String({ description: "Tags as comma-separated key:value pairs (e.g. language:python,level:beginner)" })),
+      content: Type.Optional(Type.String({ description: "Article content in markdown" })),
+    }),
+    async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
+      const title = params.title as string;
+      if (!title) {
+        return {
+          content: [{ type: "text", text: "Error: title is required" }],
+          details: {},
+        };
       }
+
+      const tagsStr = params.tags as string | undefined;
+      const content = params.content as string | undefined;
+      const result = await executeCreateAction(getLocalKnowledgeBaseConfig(), title, tagsStr, content);
 
       return {
         content: [{ type: "text", text: formatCreateResult(result) }],
