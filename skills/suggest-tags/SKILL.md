@@ -23,11 +23,12 @@ Good tag systems use multiple orthogonal dimensions:
 
 | Category | Description | Examples |
 |----------|------------|----------|
+| `kind` | What the artifact is | `tool`, `skill`, `article`, `extension`, `app`, `repo` |
 | `language` | Programming language | `python`, `javascript`, `rust`, `go` |
 | `level` | Difficulty/Audience | `beginner`, `intermediate`, `advanced` |
-| `concept` | Main topic/concept | `errors`, `async`, `testing`, `api` |
+| `concept` | Main topic/concept | `errors`, `async`, `testing`, `api`, `tools` |
 | `framework` | Framework used | `fastapi`, `react`, `express` |
-| `type` | Article type | `tutorial`, `reference`, `cheatsheet`, `theory` |
+| `type` | Article/document type | `tutorial`, `reference`, `cheatsheet`, `theory`, `overview` |
 | `status` | Publication state | `draft`, `review`, `published`, `deprecated` |
 | `domain` | Knowledge domain | `webdev`, `devops`, `data-science`, `security` |
 | `source` | Where it came from | `documentation`, `community`, `course`, `conference`, `repo` |
@@ -35,17 +36,19 @@ Good tag systems use multiple orthogonal dimensions:
 
 ### Tagging Principles
 
-1. **Use 3-7 tags per article**: Enough to describe without overcrowding
-2. **Prefer specific over general**: `fastapi` over `python`, `oauth` over `auth`
-3. **Include a category tag when it fits**: Usually add `type:*` (tutorial, reference, guide)
-4. **Add level when applicable**: `level:beginner` for learning content
-5. **Use consistent values**: Build a vocabulary of allowed values per key
-6. **Include a project tag for the target knowledge base**: Add `project:<project-name>` to categorize articles by project
+1. **Prefer specific over general**: `fastapi` over `python`, `oauth` over `auth`
+2. **Include category tags when they fit**: Articles can legitimately have multiple `type:*` values when they span several roles (for example `type:reference` + `type:overview`)
+3. **Add level when applicable**: `level:beginner` for learning content
+4. **Use consistent values**: Build a vocabulary of allowed values per key
+5. **Include a project tag for the target knowledge base**: Add `project:<project-name>` to categorize articles by project
+6. **Use as many tags as needed** to capture the artifact cleanly; do not force a short limit if more orthogonal tags improve retrieval
+7. **Repeat keys freely when they describe different things**: `concept:tools` and `concept:wiki` can both be valid on the same article
+8. **Do not repeat the exact same tag twice**: `concept:tools` should appear once, not duplicated
 
 ### Avoid
 
 - **Generic tags**: `important`, `useful`, `info`
-- **Too many tags**: More than 8 tags usually indicates unclear focus
+- **Too much overlap**: Tags that repeat the same idea in different words
 - **Redundant tags**: `language:python` and `framework:fastapi` both imply Python
 - **Inconsistent naming**: `web-dev` vs `webdev` vs `web_development`
 - **Single-use tags**: Tags that apply to only one article aren't useful
@@ -73,6 +76,8 @@ Content: "A guide to common Python errors and how to handle them..."
    - What project does this belong to?
 3. Map to existing tag vocabulary (check `kb-tags`)
 4. Suggest new tags if needed
+5. When the article is about a tool or toolset, consider `kind:tool` or a `concept:tools`-style tag so the artifact class is explicit
+6. If an article spans multiple roles, include multiple `type:*` tags rather than forcing a single label
 
 ### Output Format
 
@@ -98,8 +103,9 @@ Alternative: concept:debugging (if more practical focus)
 Maintain a consistent vocabulary. Common values:
 
 - `language`: python, javascript, rust, go, typescript, bash, sql
+- `kind`: tool, skill, article, extension, app, repo
 - `level`: beginner, intermediate, advanced
-- `type`: tutorial, reference, guide, cheatsheet, theory, concept, news, error
+- `type`: tutorial, reference, guide, cheatsheet, theory, concept, news, error, overview
 - `concept`: (open - choose specific)
 - `framework`: (open - choose specific)
 - `status`: draft, review, published, deprecated

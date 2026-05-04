@@ -43,6 +43,12 @@ Articles are stored as individual `.md` files, one per slug. This keeps the know
 
 Tags are stored as key/value pairs instead of free-form labels. This makes filtering and relationship building predictable for LLMs.
 
+The tagging system is intentionally open-ended:
+
+- repeat keys freely when they describe different things
+- keep exact duplicate key/value pairs out of articles
+- let the article corpus determine which tag combinations are useful over time
+
 ### 3. Keep tools narrow
 
 Each tool maps to a single user intent:
@@ -114,4 +120,4 @@ pi tool call
 - File-based data makes syncing and backups straightforward
 - The git repo gives article history without adding database complexity
 - Separate one-way transfer tools reduce ambiguity for LLM callers
-- The tag model keeps metadata consistent across articles
+- The tag model keeps metadata consistent across articles while still allowing open-ended, multi-faceted descriptions

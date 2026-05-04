@@ -1,6 +1,7 @@
 ---
 title: Knowledge Base
 tags:
+  kind: article
   type: index
   status: published
   project: knowledge-base
@@ -22,6 +23,7 @@ Welcome to the knowledge base. This is the index article.
 
 ## Tag Categories
 
+- `kind:*` - What the thing is (tool, skill, article, extension, app, repo)
 - `language:*` - Programming language
 - `level:*` - Difficulty level
 - `type:*` - Article type
@@ -34,6 +36,12 @@ Welcome to the knowledge base. This is the index article.
 ## Project Tagging
 
 All articles should include a `project:<project-name>` tag to categorize by project. For this knowledge base, use `project:knowledge-base`.
+
+## Tagging Rules
+
+- Repeat keys when they describe different aspects of the same article
+- Do not repeat the exact same key/value pair twice
+- Allow the corpus to accumulate enough tags for order to emerge later
 
 ## Scope Notes
 

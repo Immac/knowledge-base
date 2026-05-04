@@ -11,6 +11,7 @@ A file-based knowledge base extension for managing markdown articles with struct
 - 🔍 Store, read, search, and edit markdown articles
 - 🛠️ Use value tags for structured discovery and filtering
 - 📚 Build a tag index with related-tag relationships
+- 🧩 Let tags stay open-ended: repeat keys when needed, but avoid exact duplicate tag pairs
 - ↔️ Promote local articles to global or copy global articles into a local workspace
 - ✍️ Create articles globally or in a local workspace with explicit tools
 - 🔁 Auto-initialize the article folder and git repo on first use
@@ -115,7 +116,7 @@ modified: 2026-05-03T11:00:00.000Z
 ---
 ```
 
-Tags are stored as key/value pairs, which makes filtering and cross-linking easy.
+Tags are stored as key/value pairs, which makes filtering and cross-linking easy. The tagging model is intentionally open-ended: repeat keys when needed, but do not duplicate the exact same tag pair.
 
 ## Development
 
