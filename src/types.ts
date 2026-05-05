@@ -5,9 +5,16 @@ export interface ValueTag {
   readonly value: string;
 }
 
+export interface TagRelationship {
+  readonly predicate: string;
+  readonly target: string;
+  readonly qualifiers: readonly ValueTag[];
+}
+
 export interface ArticleFrontmatter {
   readonly title: string;
   readonly tags: readonly string[];
+  readonly relationships?: readonly TagRelationship[];
   readonly attachments?: readonly string[];
   readonly created: string; // ISO 8601
   readonly modified: string; // ISO 8601
@@ -19,6 +26,7 @@ export interface Article {
   readonly content: string;
   readonly tags: readonly ValueTag[];
   readonly attachments: readonly string[];
+  readonly relationships: readonly TagRelationship[];
   readonly created: Date;
   readonly modified: Date;
   readonly filePath: string;
@@ -45,6 +53,7 @@ export type CreateOptions = {
   readonly tags?: readonly ValueTag[];
   readonly content?: string;
   readonly attachments?: readonly string[];
+  readonly relationships?: readonly TagRelationship[];
 };
 
 export type EditOptions = {
@@ -53,6 +62,7 @@ export type EditOptions = {
   readonly tags?: readonly ValueTag[];
   readonly content?: string;
   readonly attachments?: readonly string[];
+  readonly relationships?: readonly TagRelationship[];
 };
 
 export type SearchOptions = {

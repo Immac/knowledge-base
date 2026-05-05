@@ -1,6 +1,6 @@
 // Knowledge Base - Search Command
 
-import { listArticles } from '../storage.js';
+import { getArticleSemanticTags, listArticles } from '../storage.js';
 import type { Article, SearchOptions, KnowledgeBaseConfig, ValueTag } from '../types.js';
 
 export type { SearchOptions };
@@ -36,9 +36,11 @@ export function searchCommand(options: SearchOptions, config: KnowledgeBaseConfi
   for (const article of articles) {
     let match = true;
 
+    const semanticTags = getArticleSemanticTags(article);
+
     // Check tags (AND logic)
     if (options.tags && options.tags.length > 0) {
-      match = matchesTags(article.tags, options.tags);
+      match = matchesTags(semanticTags, options.tags);
     }
 
     // Check content
@@ -65,7 +67,7 @@ export function formatSearchResult(result: SearchResult): string {
   const lines: string[] = [`Found ${result.count} article(s):\n`];
 
   for (const article of result.articles) {
-    const tagsStr = article.tags.map((t) => `${t.key}:${t.value}`).join(', ');
+    const tagsStr = getArticleSemanticTags(article).map((t) => `${t.key}:${t.value}`).join(', ');
     lines.push(`- ${article.title} [${article.slug}]`);
     lines.push(`  Tags: ${tagsStr}`);
     lines.push('');

@@ -1,120 +1,187 @@
 ---
 name: suggest-tags
-description: Suggest appropriate tags for knowledge base articles based on their title and content.
+description: Suggest relationship-aware tags for knowledge base articles based on their title, content, and graph context.
 ---
 
 # Suggest Tags - Knowledge Base Tagging Skill
 
-This skill helps the LLM analyze an article and suggest appropriate tags based on established knowledge organization best practices.
+This skill helps the LLM analyze an article and suggest tags for the knowledge base's graph-aware tagging model.
 
-The listed tag keys are suggestions, not a hard schema: if the article needs a new key, use it.
+Use it for:
+- creating a new article via `kb-create`
+- editing an article's tags via `kb-edit`
+- reviewing existing articles and improving their metadata
+- designing graph-shaped knowledge entries where concepts point to other concepts
 
-## When to use
+## Core idea
 
-Use this skill when:
-- Creating a new article via `kb-create`
-- Editing an article's tags via `kb-edit`
-- Reviewing existing articles to suggest improved tags
-- Building a new article from scratch
+The knowledge base now treats metadata as a **semantic graph**:
 
-## Tagging Strategy
+- **value tags** label the thing the article is about
+- **relationship tags** connect that thing to other concepts
+- **qualifier tags** add detail to a relationship
 
-### Tag Categories
+Examples:
+- `topic:yasaka-kanako`
+- `kind:character`
+- `part-of:touhou-project`
+- `instance-of:video-game`
+- `appears-in:touhou-10` with qualifier `role:major`
 
-Good tag systems use multiple orthogonal dimensions:
+## Tagging strategy
 
-| Category | Description | Examples |
-|----------|------------|----------|
-| `kind` | What the artifact is | `tool`, `skill`, `article`, `extension`, `app`, `repo` |
-| `language` | Programming language | `python`, `javascript`, `rust`, `go` |
-| `level` | Difficulty/Audience | `beginner`, `intermediate`, `advanced` |
-| `concept` | Main topic/concept | `errors`, `async`, `testing`, `api`, `tools` |
-| `framework` | Framework used | `fastapi`, `react`, `express` |
-| `type` | Article/document type | `tutorial`, `reference`, `cheatsheet`, `theory`, `overview` |
-| `status` | Publication state | `draft`, `review`, `published`, `deprecated` |
-| `domain` | Knowledge domain | `webdev`, `devops`, `data-science`, `security` |
-| `source` | Where it came from | `documentation`, `community`, `course`, `conference`, `repo` |
-| `project` | Project name | `knowledge-base`, other project identifiers |
-| `any other key` | Use whatever key the article needs | `audience`, `audience-level`, `format`, `scope`, `owner` |
+### 1. Use value tags for the article's identity
+These are the primary labels for the article itself.
 
-### Tagging Principles
+| Key | Description | Examples |
+|---|---|---|
+| `topic` | Main concept/name | `yasaka-kanako`, `touhou-project`, `pi-harness` |
+| `kind` | What the article represents | `article`, `character`, `franchise`, `work`, `tool`, `skill` |
+| `type` | Document style | `tutorial`, `reference`, `overview`, `theory` |
+| `status` | Draft state | `draft`, `review`, `published`, `deprecated` |
+| `project` | Project grouping | `knowledge-base` |
+| `domain` | Broader area | `game-knowledge`, `ai-tools`, `software` |
 
-1. **Prefer specific over general**: `fastapi` over `python`, `oauth` over `auth`
-2. **Include category tags when they fit**: Articles can legitimately have multiple `type:*` values when they span several roles (for example `type:reference` + `type:overview`)
-3. **Add level when applicable**: `level:beginner` for learning content
-4. **Use consistent values**: Build a vocabulary of allowed values per key
-5. **Include a project tag for the target knowledge base**: Add `project:<project-name>` to categorize articles by project
-6. **Use as many tags as needed** to capture the artifact cleanly; do not force a short limit if more orthogonal tags improve retrieval
-7. **Repeat keys freely when they describe different things**: `concept:tools` and `concept:wiki` can both be valid on the same article
-8. **Do not repeat the exact same tag twice**: `concept:tools` should appear once, not duplicated
-9. **Keys themselves are suggestions**: if the article needs `audience`, `format`, `scope`, or some other key, use it
+### 2. Use relationship tags for graph edges
+Use these when the article should point to another concept.
+
+Recommended predicates:
+- `instance-of` — what the subject is
+- `part-of` — where the subject belongs
+- `appears-in` — character/work appearances
+- `alias-of` — alternate name resolution
+- `has-trait` — descriptive characteristics
+- `related-to` — fallback only when a stronger predicate does not fit
+
+### 3. Add qualifier tags when a relationship needs context
+Qualifiers describe the edge, not the article globally.
+
+Examples:
+- `role:major`
+- `role:minor`
+- `medium:game`
+- `medium:manga`
+- `importance:primary`
+
+Example structure:
+
+```yaml
+title: Yasaka Kanako
+tags:
+  - topic:yasaka-kanako
+  - kind: character
+  - project:knowledge-base
+relationships:
+  - predicate: appears-in
+    target: touhou-10
+    qualifiers:
+      - key: role
+        value: major
+      - key: medium
+        value: game
+  - predicate: part-of
+    target: touhou-project
+```
+
+## DAG guidance
+
+Think in terms of a DAG, not a tree:
+
+- the same concept can have multiple parents
+- the same item can be described by multiple collections
+- a work can be both `instance-of:video-game` and `part-of:touhou-project`
+- a character can `appear-in` several works
+
+### Good pattern
+Use canonical concept labels consistently:
+- `touhou-project`
+- `touhou-10`
+- `yasaka-kanako`
+
+If a concept is ambiguous, add a clarifying relation or alias:
+- `topic:pi-harness`
+- `alias-of:pi`
+- `has-trait:opinionated`
+- `has-trait:minimalistic`
 
 ### Avoid
+- packing multiple meanings into one flat tag
+- using vague tags like `important` or `misc`
+- duplicating exact tag pairs
+- using `related-to` when a more precise predicate exists
 
-- **Generic tags**: `important`, `useful`, `info`
-- **Too much overlap**: Tags that repeat the same idea in different words
-- **Redundant tags**: `language:python` and `framework:fastapi` both imply Python
-- **Inconsistent naming**: `web-dev` vs `webdev` vs `web_development`
-- **Single-use tags**: Tags that apply to only one article aren't useful
-- **Missing project tag**: If the article belongs to a named project, include `project:<project-name>` to group articles
+## Tagging principles
+
+1. **Prefer the most specific concept available**
+2. **Use relationships when the article points to another concept**
+3. **Use qualifiers for edge-specific detail**
+4. **Repeat keys freely when they describe different facts**
+5. **Do not repeat the exact same key/value pair twice**
+6. **Keep values canonical and reusable**
+7. **Let the graph encode meaning instead of overloading a single tag**
+
+## Suggested vocabulary
+
+Common values:
+
+- `kind`: article, character, franchise, work, tool, skill, media, raw, collection, item
+- `type`: tutorial, reference, guide, cheatsheet, theory, concept, overview
+- `status`: draft, review, published, deprecated
+- `domain`: webdev, devops, data-science, game-knowledge, ai-tools, software
+- `role`: major, minor, cameo, supporting
+- `medium`: game, manga, anime, book, video, image
+- `project`: knowledge-base
 
 ## How to use
 
-### Input
+When suggesting tags for an article, return:
+- the primary value tags
+- any relationship tags needed to connect the article to parent concepts
+- qualifiers only when they clarify a specific relationship
 
-Provide the article's title and content (optional for editing):
+### Example: Touhou character
 
+```text
+Suggested tags:
+- topic:yasaka-kanako      (the article is about Kanako)
+- kind:character           (the subject is a character)
+- part-of:touhou-project   (she belongs to the Touhou Project franchise)
+- appears-in:touhou-10     (major appearance in Touhou 10)
+- appears-in:touhou-11     (minor appearance in Touhou 11)
+- appears-in:touhou-17-5   (major appearance in Touhou 17.5)
 ```
-Title: "Handling Python Errors"
-Content: "A guide to common Python errors and how to handle them..."
+
+If a relationship needs detail, add qualifiers to that edge:
+
+```yaml
+relationships:
+  - predicate: appears-in
+    target: touhou-10
+    qualifiers:
+      - key: role
+        value: major
+      - key: medium
+        value: game
 ```
 
-### Process
-
-1. Analyze the article title and content
-2. Identify key dimensions:
-   - What language(s) are used?
-   - What is the difficulty level?
-   - What concept/topic is covered?
-   - What type of article is it?
-   - What project does this belong to?
-3. Map to existing tag vocabulary (check `kb-tags`)
-4. Suggest new tags if needed
-5. When the article is about a tool or toolset, consider `kind:tool` or a `concept:tools`-style tag so the artifact class is explicit
-6. If an article spans multiple roles, include multiple `type:*` tags rather than forcing a single label
-
-### Output Format
+## Output format
 
 Respond with:
-- Proposed tag suggestions as `key:value` pairs
-- Brief explanation of each tag choice
-- Any alternative suggestions
+- proposed `key:value` tags
+- any relationship tags that should be added
+- brief reasoning for each choice
+- alternative tags if the concept could be described another way
 
 Example:
-```
+
+```text
 Suggested tags:
-- language:python    (the article covers Python)
-- level:beginner  (accessible to new developers)  
-- concept:errors  (main topic: error handling)
-- type:tutorial  (learning-oriented article)
-- project:knowledge-base  (project identifier)
+- topic:yasaka-kanako
+- kind:character
+- part-of:touhou-project
+- appears-in:touhou-10
 
-Alternative: concept:debugging (if more practical focus)
+Relationships:
+- appears-in:touhou-10 [role:major, medium:game]
+- appears-in:touhou-11 [role:minor, medium:game]
 ```
-
-## Tag Vocabulary
-
-Maintain a consistent vocabulary. Common values:
-
-- `language`: python, javascript, rust, go, typescript, bash, sql
-- `kind`: tool, skill, article, extension, app, repo
-- `level`: beginner, intermediate, advanced
-- `type`: tutorial, reference, guide, cheatsheet, theory, concept, news, error, overview
-- `concept`: (open - choose specific)
-- `framework`: (open - choose specific)
-- `status`: draft, review, published, deprecated
-- `domain`: webdev, devops, data-science, security, mobile, desktop, backend
-- `source`: documentation, community, course, conference, repo
-- `project`: knowledge-base
-
-**Note:** For Knowledge Base articles, include the appropriate `project:<project-name>` tag so the project can be filtered and grouped consistently.

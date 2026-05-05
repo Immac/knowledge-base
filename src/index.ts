@@ -5,7 +5,7 @@ import { Type } from "typebox";
 
 // Commands
 import { listCommand, formatListResult, type ListOptions } from "./commands/list.js";
-import { createCommand, formatCreateResult, parseTagsString, type CreateOptions } from "./commands/create.js";
+import { createCommand, formatCreateResult, parseTagsString, parseRelationsString, type CreateOptions } from "./commands/create.js";
 import { readCommand, formatReadResult, type ReadOptions } from "./commands/read.js";
 import { editCommand, formatEditResult, type EditOptions } from "./commands/edit.js";
 import { tagsCommand, formatTagIndex, type TagsOptions } from "./commands/tags.js";
@@ -48,11 +48,18 @@ function initKnowledgeBase(config: KnowledgeBaseConfig = getKnowledgeBaseConfig(
   return config;
 }
 
-async function executeCreateAction(config: KnowledgeBaseConfig, title: string, tagsStr?: string, content?: string) {
+async function executeCreateAction(
+  config: KnowledgeBaseConfig,
+  title: string,
+  tagsStr?: string,
+  relationshipsStr?: string,
+  content?: string
+) {
   const initializedConfig = initKnowledgeBase(config);
   const options: CreateOptions = {
     title,
     tags: tagsStr ? parseTagsString(tagsStr) : undefined,
+    relationships: relationshipsStr ? parseRelationsString(relationshipsStr) : undefined,
     content,
   };
 
@@ -387,6 +394,7 @@ export default function (pi: ExtensionAPI) {
     parameters: Type.Object({
       title: Type.String({ description: "Article title" }),
       tags: Type.Optional(Type.String({ description: "Tags as comma-separated key:value pairs (e.g. language:python,level:beginner)" })),
+      relationships: Type.Optional(Type.String({ description: "Relationships as JSON array of {predicate,target,qualifiers?} objects" })),
       content: Type.Optional(Type.String({ description: "Article content in markdown" })),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
@@ -399,8 +407,9 @@ export default function (pi: ExtensionAPI) {
       }
 
       const tagsStr = params.tags as string | undefined;
+      const relationshipsStr = params.relationships as string | undefined;
       const content = params.content as string | undefined;
-      const result = await executeCreateAction(getKnowledgeBaseConfig(), title, tagsStr, content);
+      const result = await executeCreateAction(getKnowledgeBaseConfig(), title, tagsStr, relationshipsStr, content);
 
       return {
         content: [{ type: "text", text: formatCreateResult(result) }],
@@ -417,6 +426,7 @@ export default function (pi: ExtensionAPI) {
     parameters: Type.Object({
       title: Type.String({ description: "Article title" }),
       tags: Type.Optional(Type.String({ description: "Tags as comma-separated key:value pairs (e.g. language:python,level:beginner)" })),
+      relationships: Type.Optional(Type.String({ description: "Relationships as JSON array of {predicate,target,qualifiers?} objects" })),
       content: Type.Optional(Type.String({ description: "Article content in markdown" })),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
@@ -429,8 +439,9 @@ export default function (pi: ExtensionAPI) {
       }
 
       const tagsStr = params.tags as string | undefined;
+      const relationshipsStr = params.relationships as string | undefined;
       const content = params.content as string | undefined;
-      const result = await executeCreateAction(getLocalKnowledgeBaseConfig(), title, tagsStr, content);
+      const result = await executeCreateAction(getLocalKnowledgeBaseConfig(), title, tagsStr, relationshipsStr, content);
 
       return {
         content: [{ type: "text", text: formatCreateResult(result) }],
@@ -476,6 +487,7 @@ export default function (pi: ExtensionAPI) {
       slug: Type.String({ description: "Article slug to edit" }),
       title: Type.Optional(Type.String({ description: "New title" })),
       tags: Type.Optional(Type.String({ description: "Tags as comma-separated key:value pairs" })),
+      relationships: Type.Optional(Type.String({ description: "Relationships as JSON array of {predicate,target,qualifiers?} objects" })),
       content: Type.Optional(Type.String({ description: "New content in markdown" })),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
@@ -491,12 +503,14 @@ export default function (pi: ExtensionAPI) {
 
       const title = params.title as string | undefined;
       const tagsStr = params.tags as string | undefined;
+      const relationshipsStr = params.relationships as string | undefined;
       const content = params.content as string | undefined;
 
       const options: EditOptions = {
         slug,
         title,
         tags: tagsStr ? parseTagsString(tagsStr) : undefined,
+        relationships: relationshipsStr ? parseRelationsString(relationshipsStr) : undefined,
         content,
       };
 

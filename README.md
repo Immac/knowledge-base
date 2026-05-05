@@ -9,8 +9,8 @@ A file-based knowledge base extension for managing markdown articles with struct
 ## Features
 
 - 🔍 Store, read, search, and edit markdown articles
-- 🛠️ Use value tags for structured discovery and filtering
-- 📚 Build a tag index with related-tag relationships
+- 🛠️ Use value tags plus relationship tags for structured discovery and filtering
+- 📚 Build a semantic tag index with relationship-aware graph links
 - 🧩 Let tags stay open-ended: repeat keys when needed, but avoid exact duplicate tag pairs
 - 🖼️ Upload media files into managed `media/` folders with tags
 - 📦 Store arbitrary raw files in managed `raw/` folders with tags
@@ -155,7 +155,7 @@ modified: 2026-05-03T11:00:00.000Z
 ---
 ```
 
-Tags are stored as key/value pairs, which makes filtering and cross-linking easy. The tagging model is intentionally open-ended: repeat keys when needed, do not duplicate the exact same tag pair, and introduce new keys when they help describe the article. Managed media and raw files store the same style of tags in sidecar metadata files.
+Tags are stored as key/value pairs, which makes filtering and cross-linking easy. For graph-shaped knowledge, articles can also include relationship records in frontmatter (for example `part-of`, `instance-of`, or `appears-in`) with optional qualifier tags. The tagging model is intentionally open-ended: repeat keys when needed, do not duplicate the exact same tag pair, and introduce new keys when they help describe the article. Managed media and raw files store the same style of tags in sidecar metadata files.
 
 ## Development
 

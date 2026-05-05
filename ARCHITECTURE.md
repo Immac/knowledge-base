@@ -45,9 +45,11 @@ Each knowledge base folder is initialized as a git repository on first use.
 
 Articles are stored as individual `.md` files, one per slug. This keeps the knowledge base easy to inspect and move between scopes.
 
-### 2. Use value tags
+### 2. Use value tags and relationship tags
 
 Tags are stored as key/value pairs instead of free-form labels. This makes filtering and relationship building predictable for LLMs.
+
+When the knowledge needs graph structure, add relationship records with predicates like `part-of`, `instance-of`, `appears-in`, or `alias-of`. Those relations can carry qualifier tags such as `role:major` or `medium:game`.
 
 The tagging system is intentionally open-ended:
 
@@ -55,6 +57,7 @@ The tagging system is intentionally open-ended:
 - introduce new keys when the article needs them
 - keep exact duplicate key/value pairs out of articles
 - let the article corpus determine which tag combinations are useful over time
+- use relationship predicates for DAG edges instead of forcing everything into one flat tag
 
 ### 3. Keep tools narrow
 

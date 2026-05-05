@@ -1,6 +1,6 @@
 // Knowledge Base - Tags Index Command
 
-import { listArticles } from '../storage.js';
+import { getArticleSemanticTags, listArticles } from '../storage.js';
 import type { Article, TagIndex, TagIndexEntry, TagsOptions, KnowledgeBaseConfig, ValueTag } from '../types.js';
 
 export type { TagsOptions };
@@ -11,7 +11,7 @@ export function buildTagIndex(articles: readonly Article[]): TagIndex {
   for (const article of articles) {
     const slug = article.slug;
 
-    for (const tag of article.tags) {
+    for (const tag of getArticleSemanticTags(article)) {
       const key = tag.key;
       const value = tag.value;
       const compositeKey = `${key}:${value}`;
@@ -40,7 +40,7 @@ export function buildTagIndex(articles: readonly Article[]): TagIndex {
     for (const article of articles) {
       if (entry.articles.includes(article.slug)) continue;
 
-      for (const tag of article.tags) {
+      for (const tag of getArticleSemanticTags(article)) {
         if (tag.key !== entry.key) {
           related.push(tag);
         }

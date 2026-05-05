@@ -3,6 +3,7 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync, statSync, unlinkSync, copyFileSync } from 'fs';
 import { basename, join, resolve } from 'path';
 import { parseFrontmatter, serializeArticle, generateSlug } from './parser.js';
+import { dedupeTagRelationships, dedupeValueTags, semanticTagsForArticle } from './tag-graph.js';
 import { resolveDataPath, ensureDataPath, getKnowledgeBasePaths } from './config.js';
 import type {
   Article,
@@ -226,7 +227,8 @@ export function writeArticle(article: Article): void {
     article.content,
     article.created,
     article.modified,
-    article.attachments
+    article.attachments,
+    article.relationships
   );
   writeFileSync(article.filePath, content, 'utf-8');
 }
@@ -238,8 +240,9 @@ export function createArticle(options: CreateOptions, config: KnowledgeBaseConfi
     slug,
     title: options.title,
     content: options.content ?? '',
-    tags: options.tags ?? [],
+    tags: dedupeValueTags(options.tags ?? []),
     attachments: options.attachments ?? [],
+    relationships: dedupeTagRelationships(options.relationships ?? []),
     created: now,
     modified: now,
     filePath: join(config.dataPath, `${slug}.md`),
@@ -259,14 +262,19 @@ export function editArticle(options: EditOptions, config: KnowledgeBaseConfig): 
   const updated: Article = {
     ...existing,
     title: options.title ?? existing.title,
-    tags: options.tags ?? existing.tags,
+    tags: options.tags ? dedupeValueTags(options.tags) : existing.tags,
     content: options.content ?? existing.content,
     attachments: options.attachments ?? existing.attachments,
+    relationships: options.relationships ? dedupeTagRelationships(options.relationships) : existing.relationships,
     modified: now,
   };
 
   writeArticle(updated);
   return updated;
+}
+
+export function getArticleSemanticTags(article: Pick<Article, 'tags' | 'relationships'>): readonly ValueTag[] {
+  return semanticTagsForArticle(article);
 }
 
 export function listArticles(config: KnowledgeBaseConfig): readonly Article[] {

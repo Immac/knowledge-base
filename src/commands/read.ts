@@ -1,6 +1,7 @@
 // Knowledge Base - Read Command
 
-import { readArticle } from '../storage.js';
+import { getArticleSemanticTags, readArticle } from '../storage.js';
+import { formatTagRelationship } from '../tag-graph.js';
 import type { Article, ReadOptions, KnowledgeBaseConfig } from '../types.js';
 
 export type { ReadOptions };
@@ -33,11 +34,16 @@ export function formatReadResult(result: ReadResult): string {
   }
 
   const article = result.article!;
-  const tagsStr = article.tags.map((t) => `${t.key}:${t.value}`).join(', ');
+  const tagsStr = getArticleSemanticTags(article).map((t) => `${t.key}:${t.value}`).join(', ');
+  const relationshipsStr = article.relationships.length
+    ? `
+Relationships:
+${article.relationships.map((relationship) => `- ${formatTagRelationship(relationship)}`).join('\n')}`
+    : '';
 
   return `Title: ${article.title}
 Slug: ${article.slug}
-Tags: ${tagsStr}
+Tags: ${tagsStr}${relationshipsStr}
 Created: ${article.created.toISOString()}
 Modified: ${article.modified.toISOString()}
 

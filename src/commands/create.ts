@@ -1,9 +1,10 @@
 // Knowledge Base - Create Command
 
 import { createArticle as storeCreateArticle, ensureDataFolder } from '../storage.js';
-import type { Article, CreateOptions, KnowledgeBaseConfig, ValueTag } from '../types.js';
+import { parseTagRelationshipsFromUnknown, parseValueTagsFromUnknown } from '../tag-graph.js';
+import type { Article, CreateOptions, KnowledgeBaseConfig, TagRelationship, ValueTag } from '../types.js';
 
-export type { CreateOptions, ValueTag };
+export type { CreateOptions, ValueTag, TagRelationship };
 
 export interface CreateResult {
   readonly success: boolean;
@@ -41,12 +42,21 @@ Path: ${article.filePath}`;
 
 export function parseTagsString(tagsStr: string): readonly ValueTag[] {
   if (!tagsStr) return [];
+  return parseValueTagsFromUnknown(
+    tagsStr.split(',').map((tag) => {
+      const [key, value] = tag.split(':');
+      return { key: key.trim(), value: value?.trim() ?? '' };
+    })
+  );
+}
 
-  return tagsStr.split(',').map((t) => {
-    const [key, value] = t.split(':');
-    return {
-      key: key.trim(),
-      value: value?.trim() ?? '',
-    };
-  });
+export function parseRelationsString(relationsStr: string): readonly TagRelationship[] {
+  if (!relationsStr) return [];
+
+  try {
+    const parsed = JSON.parse(relationsStr) as unknown;
+    return parseTagRelationshipsFromUnknown(parsed);
+  } catch {
+    return [];
+  }
 }

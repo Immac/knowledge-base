@@ -1,6 +1,6 @@
 // Knowledge Base - List Command
 
-import { listArticles } from '../storage.js';
+import { getArticleSemanticTags, listArticles } from '../storage.js';
 import type { Article, ListOptions, KnowledgeBaseConfig } from '../types.js';
 
 export type { ListOptions };
@@ -26,7 +26,7 @@ export function formatListResult(result: ListResult): string {
   const lines: string[] = [`Found ${result.count} article(s):\n`];
 
   for (const article of result.articles) {
-    const tagsStr = article.tags.map((t) => `${t.key}:${t.value}`).join(', ');
+    const tagsStr = getArticleSemanticTags(article).map((t) => `${t.key}:${t.value}`).join(', ');
     lines.push(`- ${article.title} [${article.slug}]`);
     lines.push(`  Modified: ${article.modified.toISOString().split('T')[0]}`);
     if (tagsStr) {
