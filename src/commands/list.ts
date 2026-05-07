@@ -27,7 +27,9 @@ export function formatListResult(result: ListResult): string {
 
   for (const article of result.articles) {
     const tagsStr = getArticleSemanticTags(article).map((t) => `${t.key}:${t.value}`).join(', ');
-    lines.push(`- ${article.title} [${article.slug}]`);
+    const blockCount = article.blocks?.length ?? 0;
+    const typeInfo = article.isFolder ? (blockCount > 0 ? ` [${blockCount} block(s)]` : ' [folder]') : ' [flat]';
+    lines.push(`- ${article.title} [${article.slug}]${typeInfo}`);
     lines.push(`  Modified: ${article.modified.toISOString().split('T')[0]}`);
     if (tagsStr) {
       lines.push(`  Tags: ${tagsStr}`);

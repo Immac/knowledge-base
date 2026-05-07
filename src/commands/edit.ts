@@ -1,6 +1,6 @@
 // Knowledge Base - Edit Command
 
-import { editArticle as storeEditArticle, ensureDataFolder } from '../storage.js';
+import { editArticle as storeEditArticle, ensureDataFolder, getArticleSemanticTags } from '../storage.js';
 import type { Article, EditOptions, KnowledgeBaseConfig } from '../types.js';
 
 export type { EditOptions };
@@ -41,7 +41,15 @@ export function formatEditResult(result: EditResult): string {
   }
 
   const article = result.article!;
-  return `Updated: ${article.title}
-Slug: ${article.slug}
-Modified: ${article.modified.toISOString()}`;
+  const lines = [
+    `Updated: ${article.title}`,
+    `Slug: ${article.slug}`,
+    `Modified: ${article.modified.toISOString()}`,
+  ];
+
+  if (article.blocks.length > 0) {
+    lines.push(`Blocks: ${article.blocks.map((b) => b.name).join(', ')}`);
+  }
+
+  return lines.join('\n');
 }

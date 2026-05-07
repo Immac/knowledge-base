@@ -13,23 +13,36 @@ export interface TagRelationship {
 
 export interface ArticleFrontmatter {
   readonly title: string;
+  readonly slug?: string;
   readonly tags: readonly string[];
+  readonly blocks?: readonly string[];
   readonly relationships?: readonly TagRelationship[];
   readonly attachments?: readonly string[];
   readonly created: string; // ISO 8601
   readonly modified: string; // ISO 8601
 }
 
+export interface ArticleBlock {
+  readonly name: string;
+  readonly title: string;
+  readonly content: string;
+  readonly tags: readonly ValueTag[];
+  readonly filePath: string;
+}
+
 export interface Article {
   readonly slug: string;
   readonly title: string;
   readonly content: string;
+  readonly rawContent: string;
+  readonly blocks: readonly ArticleBlock[];
   readonly tags: readonly ValueTag[];
   readonly attachments: readonly string[];
   readonly relationships: readonly TagRelationship[];
   readonly created: Date;
   readonly modified: Date;
   readonly filePath: string;
+  readonly isFolder: boolean; // discriminant: folder-based article
 }
 
 export interface TagIndexEntry {
@@ -52,6 +65,7 @@ export type CreateOptions = {
   readonly title: string;
   readonly tags?: readonly ValueTag[];
   readonly content?: string;
+  readonly blocks?: readonly { name: string; title?: string; content?: string; tags?: readonly ValueTag[] }[];
   readonly attachments?: readonly string[];
   readonly relationships?: readonly TagRelationship[];
 };
@@ -61,6 +75,7 @@ export type EditOptions = {
   readonly title?: string;
   readonly tags?: readonly ValueTag[];
   readonly content?: string;
+  readonly blocks?: readonly { name: string; title?: string; content?: string; tags?: readonly ValueTag[] }[];
   readonly attachments?: readonly string[];
   readonly relationships?: readonly TagRelationship[];
 };
@@ -80,6 +95,7 @@ export type TagsOptions = {
 
 export type ReadOptions = {
   readonly slug: string;
+  readonly structured?: boolean;
 };
 
 export type TransferAction = 'promote' | 'copy';

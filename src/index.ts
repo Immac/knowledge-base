@@ -6,7 +6,7 @@ import { Type } from "typebox";
 // Commands
 import { listCommand, formatListResult, type ListOptions } from "./commands/list.js";
 import { createCommand, formatCreateResult, parseTagsString, parseRelationsString, type CreateOptions } from "./commands/create.js";
-import { readCommand, formatReadResult, type ReadOptions } from "./commands/read.js";
+import { readCommand, formatReadResult, formatStructuredReadResult, type ReadOptions } from "./commands/read.js";
 import { editCommand, formatEditResult, type EditOptions } from "./commands/edit.js";
 import { tagsCommand, formatTagIndex, type TagsOptions } from "./commands/tags.js";
 import { searchCommand, formatSearchResult, type SearchOptions } from "./commands/search.js";
@@ -48,12 +48,28 @@ function initKnowledgeBase(config: KnowledgeBaseConfig = getKnowledgeBaseConfig(
   return config;
 }
 
+function parseBlocksString(blocksStr: string): { name: string; title?: string; content?: string; tags?: readonly import("./types.js").ValueTag[] }[] {
+  if (!blocksStr) return [];
+  try {
+    const parsed = JSON.parse(blocksStr) as { name: string; title?: string; content?: string; tags?: string }[];
+    return parsed.map((b) => ({
+      name: b.name,
+      title: b.title,
+      content: b.content,
+      tags: b.tags ? parseTagsString(b.tags) : undefined,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 async function executeCreateAction(
   config: KnowledgeBaseConfig,
   title: string,
   tagsStr?: string,
   relationshipsStr?: string,
-  content?: string
+  content?: string,
+  blocksStr?: string
 ) {
   const initializedConfig = initKnowledgeBase(config);
   const options: CreateOptions = {
@@ -61,6 +77,7 @@ async function executeCreateAction(
     tags: tagsStr ? parseTagsString(tagsStr) : undefined,
     relationships: relationshipsStr ? parseRelationsString(relationshipsStr) : undefined,
     content,
+    blocks: blocksStr ? parseBlocksString(blocksStr) : undefined,
   };
 
   const result = createCommand(options, initializedConfig);
@@ -396,6 +413,7 @@ export default function (pi: ExtensionAPI) {
       tags: Type.Optional(Type.String({ description: "Tags as comma-separated key:value pairs (e.g. language:python,level:beginner)" })),
       relationships: Type.Optional(Type.String({ description: "Relationships as JSON array of {predicate,target,qualifiers?} objects" })),
       content: Type.Optional(Type.String({ description: "Article content in markdown" })),
+      blocks: Type.Optional(Type.String({ description: "Blocks as JSON array of {name, title?, content?, tags?} objects. Tags as comma-separated key:value pairs." })),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
       const title = params.title as string;
@@ -409,7 +427,8 @@ export default function (pi: ExtensionAPI) {
       const tagsStr = params.tags as string | undefined;
       const relationshipsStr = params.relationships as string | undefined;
       const content = params.content as string | undefined;
-      const result = await executeCreateAction(getKnowledgeBaseConfig(), title, tagsStr, relationshipsStr, content);
+      const blocksStr = params.blocks as string | undefined;
+      const result = await executeCreateAction(getKnowledgeBaseConfig(), title, tagsStr, relationshipsStr, content, blocksStr);
 
       return {
         content: [{ type: "text", text: formatCreateResult(result) }],
@@ -428,6 +447,7 @@ export default function (pi: ExtensionAPI) {
       tags: Type.Optional(Type.String({ description: "Tags as comma-separated key:value pairs (e.g. language:python,level:beginner)" })),
       relationships: Type.Optional(Type.String({ description: "Relationships as JSON array of {predicate,target,qualifiers?} objects" })),
       content: Type.Optional(Type.String({ description: "Article content in markdown" })),
+      blocks: Type.Optional(Type.String({ description: "Blocks as JSON array of {name, title?, content?, tags?} objects. Tags as comma-separated key:value pairs." })),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
       const title = params.title as string;
@@ -441,7 +461,8 @@ export default function (pi: ExtensionAPI) {
       const tagsStr = params.tags as string | undefined;
       const relationshipsStr = params.relationships as string | undefined;
       const content = params.content as string | undefined;
-      const result = await executeCreateAction(getLocalKnowledgeBaseConfig(), title, tagsStr, relationshipsStr, content);
+      const blocksStr = params.blocks as string | undefined;
+      const result = await executeCreateAction(getLocalKnowledgeBaseConfig(), title, tagsStr, relationshipsStr, content, blocksStr);
 
       return {
         content: [{ type: "text", text: formatCreateResult(result) }],
@@ -454,9 +475,10 @@ export default function (pi: ExtensionAPI) {
   pi.registerTool({
     name: "kb-read",
     label: "Read Article",
-    description: "Read an article by slug",
+    description: "Read an article by slug. Default resolves blocks inline. Use structured=true to see raw block references.",
     parameters: Type.Object({
       slug: Type.String({ description: "Article slug (filename without .md)" }),
+      structured: Type.Optional(Type.Boolean({ description: "Return structured view with blocks separate instead of inlined" })),
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
       const config = initKnowledgeBase();
@@ -469,10 +491,11 @@ export default function (pi: ExtensionAPI) {
         };
       }
 
-      const options: ReadOptions = { slug };
+      const structured = params.structured as boolean | undefined;
+      const options: ReadOptions = { slug, structured };
       const result = readCommand(options, config);
       return {
-        content: [{ type: "text", text: formatReadResult(result) }],
+        content: [{ type: "text", text: structured ? formatStructuredReadResult(result) : formatReadResult(result) }],
         details: {},
       };
     },

@@ -35,9 +35,17 @@ export function formatCreateResult(result: CreateResult): string {
   }
 
   const article = result.article!;
-  return `Created: ${article.title}
-Slug: ${article.slug}
-Path: ${article.filePath}`;
+  const lines = [
+    `Created: ${article.title}`,
+    `Slug: ${article.slug}`,
+    `Path: ${article.filePath}`,
+  ];
+
+  if (article.blocks.length > 0) {
+    lines.push(`Blocks: ${article.blocks.map((b) => b.name).join(', ')}`);
+  }
+
+  return lines.join('\n');
 }
 
 export function parseTagsString(tagsStr: string): readonly ValueTag[] {
