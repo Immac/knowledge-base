@@ -1,0 +1,8 @@
+flowchart LR
+    subgraph Local["📁 Local Workspace"]
+        L["knowledge-base/articles/<br/>draft-async-patterns.md"]
+    end
+    subgraph Global["📁 Global KB"]
+        G["~/.pi/knowledge-base/articles/<br/>async-patterns-in-python.md"]
+    end
+    L -->|"kb-promote<br/>(copy + delete)"| G

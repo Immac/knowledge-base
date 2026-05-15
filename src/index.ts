@@ -69,8 +69,10 @@ async function executeCreateAction(
   tagsStr?: string,
   relationshipsStr?: string,
   content?: string,
-  blocksStr?: string
+  blocksStr?: string,
+  signal?: AbortSignal
 ) {
+  if (signal?.aborted) throw new DOMException("Aborted by caller", "AbortError");
   const initializedConfig = initKnowledgeBase(config);
   const options: CreateOptions = {
     title,
@@ -95,7 +97,8 @@ function getScopeConfig(scope: FileScope): KnowledgeBaseConfig {
   return scope === "local" ? getLocalKnowledgeBaseConfig() : getGlobalKnowledgeBaseConfig();
 }
 
-async function executeFileUpload(kind: FileKind, scope: FileScope, options: FileUploadOptions) {
+async function executeFileUpload(kind: FileKind, scope: FileScope, options: FileUploadOptions, signal?: AbortSignal) {
+  if (signal?.aborted) return { success: false, file: { name: "" }, error: "Aborted" } as any;
   const config = initKnowledgeBase(getScopeConfig(scope));
   const result = uploadFileCommand(kind, options, config);
 
@@ -115,7 +118,8 @@ function executeFileList(kind: FileKind, scope: FileScope, options: FileListOpti
   return listFilesCommand(kind, options, config);
 }
 
-async function executeTransferAction(action: TransferAction, slug: string, overwrite?: boolean) {
+async function executeTransferAction(action: TransferAction, slug: string, overwrite?: boolean, signal?: AbortSignal) {
+  if (signal?.aborted) return { success: false, error: "Aborted" } as any;
   const sourceConfig = action === "promote" ? getLocalKnowledgeBaseConfig() : getGlobalKnowledgeBaseConfig();
   const destinationConfig = action === "promote" ? getGlobalKnowledgeBaseConfig() : getLocalKnowledgeBaseConfig();
   const options: TransferOptions = {
@@ -169,7 +173,8 @@ function registerManagedFileTools(pi: ExtensionAPI, kind: FileKind, kindName: st
         Type.Literal("local"),
       ], { description: "Target knowledge base scope" })),
     }),
-    async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
+    async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
+      if (signal?.aborted) return { content: [{ type: "text", text: "Aborted" }], details: {}, isError: true };
       const sourcePath = params.sourcePath as string;
       if (!sourcePath) {
         return {
@@ -185,7 +190,7 @@ function registerManagedFileTools(pi: ExtensionAPI, kind: FileKind, kindName: st
         sourcePath,
         name,
         tags: tagsStr ? parseTagsString(tagsStr) : undefined,
-      });
+      }, signal);
 
       return {
         content: [{ type: "text", text: formatUploadFileResult(result) }],
@@ -204,7 +209,8 @@ function registerManagedFileTools(pi: ExtensionAPI, kind: FileKind, kindName: st
         Type.Literal("local"),
       ], { description: "Knowledge base scope" })),
     }),
-    async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
+    async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
+      if (signal?.aborted) return { content: [{ type: "text", text: "Aborted" }], details: {}, isError: true };
       const scope = (params.scope as FileScope | undefined) ?? "global";
       const result = executeFileList(kind, scope, { kind });
       return {
@@ -226,7 +232,8 @@ function registerManagedFileTools(pi: ExtensionAPI, kind: FileKind, kindName: st
       tags: Type.Optional(Type.String({ description: "Tags to match (AND logic) as comma-separated key:value pairs" })),
       query: Type.Optional(Type.String({ description: "Search text for file name or path" })),
     }),
-    async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
+    async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
+      if (signal?.aborted) return { content: [{ type: "text", text: "Aborted" }], details: {}, isError: true };
       const scope = (params.scope as FileScope | undefined) ?? "global";
       const tagsStr = params.tags as string | undefined;
       const query = params.query as string | undefined;
@@ -254,7 +261,8 @@ function registerManagedFileTools(pi: ExtensionAPI, kind: FileKind, kindName: st
       sourceName: Type.String({ description: "Current file name" }),
       destinationName: Type.Optional(Type.String({ description: "New file name" })),
     }),
-    async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
+    async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
+      if (signal?.aborted) return { content: [{ type: "text", text: "Aborted" }], details: {}, isError: true };
       const scope = (params.scope as FileScope | undefined) ?? "global";
       const sourceName = params.sourceName as string;
       const destinationName = params.destinationName as string | undefined;
@@ -289,7 +297,8 @@ function registerManagedFileTools(pi: ExtensionAPI, kind: FileKind, kindName: st
       ], { description: "Knowledge base scope" })),
       name: Type.String({ description: "File name" }),
     }),
-    async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
+    async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
+      if (signal?.aborted) return { content: [{ type: "text", text: "Aborted" }], details: {}, isError: true };
       const scope = (params.scope as FileScope | undefined) ?? "global";
       const name = params.name as string;
       if (!name) {
@@ -308,180 +317,10 @@ function registerManagedFileTools(pi: ExtensionAPI, kind: FileKind, kindName: st
       return {
         content: [{ type: "text", text: formatDeleteFileResult(result) }],
         details: {},
-      };
-    },
-  });
-
-  pi.registerTool({
-    name: attachToolName,
-    label: `Attach ${kindName}`,
-    description: `Attach a ${kindName.toLowerCase()} file to an article`,
-    parameters: Type.Object({
-      scope: Type.Optional(Type.Union([
-        Type.Literal("global"),
-        Type.Literal("local"),
-      ], { description: "Knowledge base scope" })),
-      articleSlug: Type.String({ description: "Article slug" }),
-      fileName: Type.String({ description: "File name" }),
-    }),
-    async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
+    async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
+      if (signal?.aborted) return { content: [{ type: "text", text: "Aborted" }], details: {}, isError: true };
       const scope = (params.scope as FileScope | undefined) ?? "global";
-      const articleSlug = params.articleSlug as string;
-      const fileName = params.fileName as string;
-      if (!articleSlug || !fileName) {
-        return { content: [{ type: "text", text: "Error: articleSlug and fileName are required" }], details: {} };
-      }
-
       const config = initKnowledgeBase(getScopeConfig(scope));
-      const result = attachFileCommand(kind, { articleSlug, fileName }, config);
-      if (result.success) {
-        try {
-          await commitChanges(config, `Attach ${kind} file: ${fileName}`);
-        } catch {
-          // Git commit may fail, that's okay
-        }
-      }
-      return {
-        content: [{ type: "text", text: formatAttachFileResult(result) }],
-        details: {},
-      };
-    },
-  });
-
-  pi.registerTool({
-    name: detachToolName,
-    label: `Detach ${kindName}`,
-    description: `Detach a ${kindName.toLowerCase()} file from an article`,
-    parameters: Type.Object({
-      scope: Type.Optional(Type.Union([
-        Type.Literal("global"),
-        Type.Literal("local"),
-      ], { description: "Knowledge base scope" })),
-      articleSlug: Type.String({ description: "Article slug" }),
-      fileName: Type.String({ description: "File name" }),
-    }),
-    async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
-      const scope = (params.scope as FileScope | undefined) ?? "global";
-      const articleSlug = params.articleSlug as string;
-      const fileName = params.fileName as string;
-      if (!articleSlug || !fileName) {
-        return { content: [{ type: "text", text: "Error: articleSlug and fileName are required" }], details: {} };
-      }
-
-      const config = initKnowledgeBase(getScopeConfig(scope));
-      const result = detachFileCommand(kind, { articleSlug, fileName }, config);
-      if (result.success) {
-        try {
-          await commitChanges(config, `Detach ${kind} file: ${fileName}`);
-        } catch {
-          // Git commit may fail, that's okay
-        }
-      }
-      return {
-        content: [{ type: "text", text: formatDetachFileResult(result) }],
-        details: {},
-      };
-    },
-  });
-}
-
-export default function (pi: ExtensionAPI) {
-  // kb-list tool
-  pi.registerTool({
-    name: "kb-list",
-    label: "List Articles",
-    description: "List all articles in the knowledge base",
-    parameters: Type.Object({}),
-    async execute(_toolCallId, _params, _signal, _onUpdate, _ctx) {
-      const config = initKnowledgeBase();
-      const options: ListOptions = {};
-      const result = listCommand(options, config);
-      return {
-        content: [{ type: "text", text: formatListResult(result) }],
-        details: {},
-      };
-    },
-  });
-
-  // kb-create tool
-  pi.registerTool({
-    name: "kb-create",
-    label: "Create Article",
-    description: "Create a new article in the knowledge base",
-    parameters: Type.Object({
-      title: Type.String({ description: "Article title" }),
-      tags: Type.Optional(Type.String({ description: "Tags as comma-separated key:value pairs (e.g. language:python,level:beginner)" })),
-      relationships: Type.Optional(Type.String({ description: "Relationships as JSON array of {predicate,target,qualifiers?} objects" })),
-      content: Type.Optional(Type.String({ description: "Article content in markdown" })),
-      blocks: Type.Optional(Type.String({ description: "Blocks as JSON array of {name, title?, content?, tags?} objects. Tags as comma-separated key:value pairs." })),
-    }),
-    async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
-      const title = params.title as string;
-      if (!title) {
-        return {
-          content: [{ type: "text", text: "Error: title is required" }],
-          details: {},
-        };
-      }
-
-      const tagsStr = params.tags as string | undefined;
-      const relationshipsStr = params.relationships as string | undefined;
-      const content = params.content as string | undefined;
-      const blocksStr = params.blocks as string | undefined;
-      const result = await executeCreateAction(getKnowledgeBaseConfig(), title, tagsStr, relationshipsStr, content, blocksStr);
-
-      return {
-        content: [{ type: "text", text: formatCreateResult(result) }],
-        details: {},
-      };
-    },
-  });
-
-  // kb-create-local tool
-  pi.registerTool({
-    name: "kb-create-local",
-    label: "Create Article Locally",
-    description: "Create a new article in the local knowledge base",
-    parameters: Type.Object({
-      title: Type.String({ description: "Article title" }),
-      tags: Type.Optional(Type.String({ description: "Tags as comma-separated key:value pairs (e.g. language:python,level:beginner)" })),
-      relationships: Type.Optional(Type.String({ description: "Relationships as JSON array of {predicate,target,qualifiers?} objects" })),
-      content: Type.Optional(Type.String({ description: "Article content in markdown" })),
-      blocks: Type.Optional(Type.String({ description: "Blocks as JSON array of {name, title?, content?, tags?} objects. Tags as comma-separated key:value pairs." })),
-    }),
-    async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
-      const title = params.title as string;
-      if (!title) {
-        return {
-          content: [{ type: "text", text: "Error: title is required" }],
-          details: {},
-        };
-      }
-
-      const tagsStr = params.tags as string | undefined;
-      const relationshipsStr = params.relationships as string | undefined;
-      const content = params.content as string | undefined;
-      const blocksStr = params.blocks as string | undefined;
-      const result = await executeCreateAction(getLocalKnowledgeBaseConfig(), title, tagsStr, relationshipsStr, content, blocksStr);
-
-      return {
-        content: [{ type: "text", text: formatCreateResult(result) }],
-        details: {},
-      };
-    },
-  });
-
-  // kb-read tool
-  pi.registerTool({
-    name: "kb-read",
-    label: "Read Article",
-    description: "Read an article by slug. Default resolves blocks inline. Use structured=true to see raw block references.",
-    parameters: Type.Object({
-      slug: Type.String({ description: "Article slug (filename without .md)" }),
-      structured: Type.Optional(Type.Boolean({ description: "Return structured view with blocks separate instead of inlined" })),
-    }),
-    async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
-      const config = initKnowledgeBase();
 
       const slug = params.slug as string;
       if (!slug) {
@@ -512,9 +351,15 @@ export default function (pi: ExtensionAPI) {
       tags: Type.Optional(Type.String({ description: "Tags as comma-separated key:value pairs" })),
       relationships: Type.Optional(Type.String({ description: "Relationships as JSON array of {predicate,target,qualifiers?} objects" })),
       content: Type.Optional(Type.String({ description: "New content in markdown" })),
+      scope: Type.Optional(Type.Union([
+        Type.Literal("global"),
+        Type.Literal("local"),
+      ], { description: "Knowledge base scope (default: global)" })),
     }),
-    async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
-      const config = initKnowledgeBase();
+    async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
+      if (signal?.aborted) return { content: [{ type: "text", text: "Aborted" }], details: {}, isError: true };
+      const scope = (params.scope as FileScope | undefined) ?? "global";
+      const config = initKnowledgeBase(getScopeConfig(scope));
 
       const slug = params.slug as string;
       if (!slug) {
@@ -560,9 +405,15 @@ export default function (pi: ExtensionAPI) {
     description: "Show tag index and relationships",
     parameters: Type.Object({
       key: Type.Optional(Type.String({ description: "Filter by specific tag key" })),
+      scope: Type.Optional(Type.Union([
+        Type.Literal("global"),
+        Type.Literal("local"),
+      ], { description: "Knowledge base scope (default: global)" })),
     }),
-    async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
-      const config = initKnowledgeBase();
+    async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
+      if (signal?.aborted) return { content: [{ type: "text", text: "Aborted" }], details: {}, isError: true };
+      const scope = (params.scope as FileScope | undefined) ?? "global";
+      const config = initKnowledgeBase(getScopeConfig(scope));
 
       const key = params.key as string | undefined;
       const options: TagsOptions = { key };
@@ -583,9 +434,205 @@ export default function (pi: ExtensionAPI) {
     parameters: Type.Object({
       tags: Type.Optional(Type.String({ description: "Tags to match (AND logic) as comma-separated key:value pairs" })),
       content: Type.Optional(Type.String({ description: "Search text in content" })),
+      scope: Type.Optional(Type.Union([
+        Type.Literal("global"),
+        Type.Literal("local"),
+      ], { description: "Knowledge base scope (default: global)" })),
+    }),
+    async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
+      if (signal?.aborted) return { content: [{ type: "text", text: "Aborted" }], details: {}, isError: true };
+      const scope = (params.scope as FileScope | undefined) ?? "global";
+      const config = initKnowledgeBase(getScopeConfig(scope));
+
+      const tagsStr = params.tags as string | undefined;
+      const content = params.content as string | undefined;
+
+      const options: SearchOptions = {
+        tags: tagsStr ? parseTagsString(tagsStr) : undefined,
+        content,
+      };
+
+      const result = searchCommand(options, config);
+      return {
+        content: [{ type: "text", text: formatSearchResult(result) }],
+        details: {},
+      };
+    },
+  });
+
+  registerManagedFileTools(pi, "media", "Media");
+  registerManagedFileTools(pi, "raw", "Raw File");
+
+  // kb-list-attachments tool
+  pi.registerTool({
+    name: "kb-list-attachments",
+    label: "List Article Attachments",
+    description: "List attachment links from an article to managed files",
+    parameters: Type.Object({
+      scope: Type.Optional(Type.Union([
+        Type.Literal("global"),
+        Type.Literal("local"),
+      ], { description: "Knowledge base scope" })),
+      slug: Type.String({ description: "Article slug" }),
+    }),
+    async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
+      if (signal?.aborted) return { content: [{ type: "text", text: "Aborted" }], details: {}, isError: true };
+      const scope = (params.scope as FileScope | undefined) ?? "global";
+      const slug = params.slug as string;
+      if (!slug) {
+        return { content: [{ type: "text", text: "Error: slug is required" }], details: {} };
+      }
+
+      const attachments = listArticleAttachmentsCommand(slug, initKnowledgeBase(getScopeConfig(scope)));
+      return {
+        content: [{ type: "text", text: formatArticleAttachments(slug, attachments) }],
+        details: {},
+      };
+    },
+  });
+
+  // kb-promote tool
+  pi.registerTool({
+    name: "kb-promote",
+    label: "Promote Article",
+    description: "Promote a local article to the global knowledge base",
+    parameters: Type.Object({
+      slug: Type.String({ description: "Local article slug to promote" }),
+      overwrite: Type.Optional(Type.Boolean({ description: "Replace the global article if it already exists" })),
+    }),
+    async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
+      if (signal?.aborted) return { content: [{ type: "text", text: "Aborted" }], details: {}, isError: true };
+      const slug = params.slug as string;
+      const overwrite = params.overwrite as boolean | undefined;
+
+      if (!slug) {
+        return {
+          content: [{ type: "text", text: "Error: slug is required" }],
+          details: {},
+        };
+      }
+
+      const result = await executeTransferAction("promote", slug, overwrite, signal);
+      return {
+        content: [{ type: "text", text: formatTransferResult(result) }],
+        details: {},
+      };
+    },
+  });
+
+  // kb-copy-local tool
+  pi.registerTool({
+    name: "kb-copy-local",
+    label: "Copy Article Locally",
+    description: "Copy a global article into the local knowledge base",
+    parameters: Type.Object({
+      slug: Type.String({ description: "Global article slug to copy" }),
+      overwrite: Type.Optional(Type.Boolean({ description: "Replace the local article if it already exists" })),
+    }),
+    async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
+      if (signal?.aborted) return { content: [{ type: "text", text: "Aborted" }], details: {}, isError: true };
+      const slug = params.slug as string;
+      const overwrite = params.overwrite as boolean | undefined;
+
+      if (!slug) {
+        return {
+          content: [{ type: "text", text: "Error: slug is required" }],
+          details: {},
+        };
+      }
+
+      const result = await executeTransferAction("copy", slug, overwrite, signal);
+      return {
+        content: [{ type: "text", text: formatTransferResult(result) }],
+        details: {},
+      };
+    },
+  });
     }),
     async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
-      const config = initKnowledgeBase();
+      const scope = (params.scope as FileScope | undefined) ?? "global";
+      const config = initKnowledgeBase(getScopeConfig(scope));
+
+      const slug = params.slug as string;
+      if (!slug) {
+        return {
+          content: [{ type: "text", text: "Error: slug is required" }],
+          details: {},
+        };
+      }
+
+      const title = params.title as string | undefined;
+      const tagsStr = params.tags as string | undefined;
+      const relationshipsStr = params.relationships as string | undefined;
+      const content = params.content as string | undefined;
+
+      const options: EditOptions = {
+        slug,
+        title,
+        tags: tagsStr ? parseTagsString(tagsStr) : undefined,
+        relationships: relationshipsStr ? parseRelationsString(relationshipsStr) : undefined,
+        content,
+      };
+
+      const result = editCommand(options, config);
+      
+      // Try to commit changes
+      try {
+        await commitChanges(config, `Update article: ${slug}`);
+      } catch {
+        // Git commit may fail, that's okay
+      }
+
+      return {
+        content: [{ type: "text", text: formatEditResult(result) }],
+        details: {},
+      };
+    },
+  });
+
+  // kb-tags tool
+  pi.registerTool({
+    name: "kb-tags",
+    label: "Tag Index",
+    description: "Show tag index and relationships",
+    parameters: Type.Object({
+      key: Type.Optional(Type.String({ description: "Filter by specific tag key" })),
+      scope: Type.Optional(Type.Union([
+        Type.Literal("global"),
+        Type.Literal("local"),
+      ], { description: "Knowledge base scope (default: global)" })),
+    }),
+    async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
+      const scope = (params.scope as FileScope | undefined) ?? "global";
+      const config = initKnowledgeBase(getScopeConfig(scope));
+
+      const key = params.key as string | undefined;
+      const options: TagsOptions = { key };
+
+      const result = tagsCommand(options, config);
+      return {
+        content: [{ type: "text", text: formatTagIndex(result) }],
+        details: {},
+      };
+    },
+  });
+
+  // kb-search tool
+  pi.registerTool({
+    name: "kb-search",
+    label: "Search Articles",
+    description: "Search articles by tags or content",
+    parameters: Type.Object({
+      tags: Type.Optional(Type.String({ description: "Tags to match (AND logic) as comma-separated key:value pairs" })),
+      content: Type.Optional(Type.String({ description: "Search text in content" })),
+      scope: Type.Optional(Type.Union([
+        Type.Literal("global"),
+        Type.Literal("local"),
+      ], { description: "Knowledge base scope (default: global)" })),
+    }),
+    async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
+      const scope = (params.scope as FileScope | undefined) ?? "global";
+      const config = initKnowledgeBase(getScopeConfig(scope));
 
       const tagsStr = params.tags as string | undefined;
       const content = params.content as string | undefined;

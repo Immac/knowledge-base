@@ -1,0 +1,171 @@
+@page {
+  size: A4;
+  margin: 2.5cm 2cm;
+}
+
+body {
+  font-family: "DejaVu Sans", "Segoe UI", sans-serif;
+  font-size: 11pt;
+  line-height: 1.6;
+  color: #1a1a1a;
+}
+
+/* Cover page */
+#cover {
+  page-break-after: always;
+  text-align: center;
+  padding-top: 6cm;
+}
+
+#cover h1 {
+  font-size: 28pt;
+  color: #1565c0;
+  margin-bottom: 0.3cm;
+}
+
+#cover .subtitle {
+  font-size: 16pt;
+  color: #555;
+  margin-bottom: 1cm;
+}
+
+#cover .version {
+  font-size: 12pt;
+  color: #888;
+  margin-top: 2cm;
+}
+
+#cover .divider {
+  width: 40%;
+  margin: 1cm auto;
+  border: none;
+  border-top: 3px solid #1565c0;
+}
+
+/* Headings */
+h1 { font-size: 20pt; color: #1565c0; margin-top: 1.5cm; page-break-before: always; }
+h1:first-of-type { page-break-before: avoid; }
+h2 { font-size: 15pt; color: #2e7d32; margin-top: 1cm; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
+h3 { font-size: 12pt; color: #333; margin-top: 0.7cm; }
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5cm 0;
+  font-size: 10pt;
+}
+
+th {
+  background: #1565c0;
+  color: white;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+td {
+  padding: 5px 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+tr:nth-child(even) td {
+  background: #f5f5f5;
+}
+
+/* Code blocks */
+pre {
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  border-left: 4px solid #1565c0;
+  padding: 10px 12px;
+  font-size: 9pt;
+  font-family: "DejaVu Sans Mono", "Consolas", monospace;
+  line-height: 1.4;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+code {
+  background: #f0f0f0;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: "DejaVu Sans Mono", "Consolas", monospace;
+  font-size: 9.5pt;
+}
+
+/* Images */
+img {
+  max-width: 100%;
+  display: block;
+  margin: 0.5cm auto;
+}
+
+/* Blockquotes */
+blockquote {
+  border-left: 4px solid #2e7d32;
+  margin: 0.5cm 0;
+  padding: 5px 15px;
+  background: #f1f8e9;
+  font-style: italic;
+}
+
+/* Lists */
+ul, ol {
+  margin: 0.3cm 0;
+  padding-left: 1.2cm;
+}
+
+li {
+  margin-bottom: 3px;
+}
+
+/* TOC */
+#toc {
+  page-break-after: always;
+}
+
+#toc h2 {
+  border-bottom: none;
+}
+
+#toc ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+#toc li {
+  margin: 4px 0;
+}
+
+#toc a {
+  color: #1565c0;
+  text-decoration: none;
+}
+
+/* Page breaks */
+.page-break {
+  page-break-before: always;
+}
+
+/* Figure captions */
+figure {
+  text-align: center;
+  margin: 0.5cm 0;
+}
+
+figcaption {
+  font-size: 9pt;
+  color: #666;
+  margin-top: 3px;
+}
+
+/* Strong emphasis */
+strong {
+  color: #c62828;
+}
+
+/* Right arrow in text */
+.arrow {
+  color: #1565c0;
+  font-weight: bold;
+}
